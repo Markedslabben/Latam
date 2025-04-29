@@ -1,0 +1,39 @@
+1. Preliminary Wind Turbine Layout	
+1.1 Obtain Digital Terrain Model (DTM) to be used in Qgis for mapping, as well as initial turbine layout, 
+contour lines and planing area.  All of them in the WGS 84 UTM 19N coordinate sytse (EPSG: 32619). 
+1.2 Use Cursor IDE and Vibe coding to produce the maps and prepare for analyses of 
+i) Turbine positioning, ii) 1.3.2 Wake losses iii) Shading tower losses (simple)
+We can use either  QGIS python library or Geopandads to prepare those maps. 
+
+2 Production estimate wind
+2.1 Obtain Virtual wind data from Vortex Series (€650), and parse into a timeseries dataframe. 
+2.2 Calculate Energy production without wake loss using the N6.x powercurve and wbls stats.  Use ParkOptimizer or NREL Floris for this purpose
+2.3 Calculate Energy production with wake loss.  	Use ParkOptimizer or NREL Floris for this purpose
+2.4  Assess wind stats, compare also with global wind atlas info. The global wind atlas is available at https://globalwindatlas.info/en/ and  provides for a good quality check.  	
+2.5 Loss estimation 
+
+3 Road layouts and Crane pads
+Indication of roads and access infrastructure for turbines and crane pads.  Crane pads for 6MW turbines are WidthxLengh 27.5x40m	
+Turbines usually have a 690V/22kV substation at the foot of the turbine.  They also consume 1-1.5 \% own consumption 
+QGIS is the best candidate for this purpose
+
+4 Revenue calculations
+4.1 Obtain representative hourly price data provided by DE Latam
+4.3 Hourly revenues
+4.4 Include solar PV production and calculate total hourly revenues	
+
+4 Shading losses solar PV 
+4.1 Tower shading losses.  The shadows from turbine towers can be projected onto the ground for a yearly average loss. I have already made a firstm model of this taking into account shading from tower.    
+4.2 However dynamic shading losses from flickering are significant as well, according to Dekker et al. (2023) due to its disturbance on MPPT's.  This task will however be left for the next phase even, though it is more important than the tower shading effect.     
+
+5 Hybrid System Overview Map	
+5.1 Overall production estimate and revenue estimate wihtout  BESS
+5.2 Revenue estiamte with BESS assumting perfect foresight for operation and BESS capacity 50% of solar PV capacity.  
+For a given batteri capacity (MWh) and charge / discharge capacity there is an optimal strategy of charge/discharge assuming perfect foresight. 
+The problem can be solved simply suing OR / LP methods implemented with PYOMO with qc(t),qd(t) - charge/discharge as the decision
+variable, q_c and q_d as charge/discharge rate limts, Q as storage capacity and t - hours per year , g_w(t) and g_pv(t) as wind and solar PV production, 
+C as capacity constraints grid (MW) and p(t) as electricity price.  then revenues are :  
+R =  Max sum(p(t)*(qc(t)+qd(t),t in T) s/t  0 < Q < Qmax , qc(t),qd(t)>0,qc<q_c,q_dzq_d
+Grid capacity constraints are omitted in this formulation.  
+
+

@@ -1,0 +1,14 @@
+name: latam_geo
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - geopandas
+  - fiona
+  - gdal
+  - pyproj
+  - shapely
+  - rtree
+  - matplotlib
+  - pandas
+  - jupyterlab  # Optional, nice if you want Notebooks

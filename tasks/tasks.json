@@ -1,0 +1,62 @@
+[
+  {
+    "id": "1",
+    "title": "Preliminary Wind Turbine Layout",
+    "status": "pending",
+    "subtasks": [
+      {"id": "1.1", "title": "Obtain Digital Terrain Model (DTM) for QGIS mapping, initial turbine layout, contour lines, and planning area (WGS 84 UTM 19N)", "status": "pending"},
+      {"id": "1.2", "title": "Use Cursor IDE and Vibe coding to produce maps for turbine positioning, wake losses, and shading tower losses (QGIS python or Geopandas)", "status": "pending"}
+    ]
+  },
+  {
+    "id": "2",
+    "title": "Production Estimate Wind",
+    "status": "pending",
+    "subtasks": [
+      {"id": "2.1", "title": "Obtain Virtual wind data from Vortex Series and parse into timeseries dataframe", "status": "pending"},
+      {"id": "2.2", "title": "Calculate Energy production without wake loss using N6.x powercurve and wbls stats (ParkOptimizer or NREL Floris)", "status": "pending"},
+      {"id": "2.3", "title": "Calculate Energy production with wake loss (ParkOptimizer or NREL Floris)", "status": "pending"},
+      {"id": "2.4", "title": "Assess wind stats and compare with global wind atlas info for quality check", "status": "pending"},
+      {"id": "2.5", "title": "Loss estimation", "status": "pending"}
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Road Layouts and Crane Pads",
+    "status": "pending",
+    "subtasks": [
+      {"id": "3.1", "title": "Indicate roads and access infrastructure for turbines and crane pads (27.5x40m for 6MW turbines)", "status": "pending"},
+      {"id": "3.2", "title": "Include substation and own consumption details (690V/22kV, 1-1.5% own consumption)", "status": "pending"},
+      {"id": "3.3", "title": "Use QGIS for infrastructure mapping", "status": "pending"}
+    ]
+  },
+  {
+    "id": "4",
+    "title": "Revenue Calculations",
+    "status": "pending",
+    "subtasks": [
+      {"id": "4.1", "title": "Obtain representative hourly price data from DE Latam", "status": "pending"},
+      {"id": "4.2", "title": "Calculate hourly revenues", "status": "pending"},
+      {"id": "4.3", "title": "Include solar PV production and calculate total hourly revenues", "status": "pending"}
+    ]
+  },
+  {
+    "id": "5",
+    "title": "Shading Losses Solar PV",
+    "status": "pending",
+    "subtasks": [
+      {"id": "5.1", "title": "Calculate tower shading losses (yearly average)", "status": "pending"},
+      {"id": "5.2", "title": "Note dynamic shading losses from flickering (to be addressed in next phase)", "status": "pending"}
+    ]
+  },
+  {
+    "id": "6",
+    "title": "Hybrid System Overview Map",
+    "status": "pending",
+    "subtasks": [
+      {"id": "6.1", "title": "Estimate overall production and revenue without BESS", "status": "pending"},
+      {"id": "6.2", "title": "Estimate revenue with BESS (50% of solar PV capacity, perfect foresight)", "status": "pending"},
+      {"id": "6.3", "title": "Formulate and solve optimal BESS operation using OR/LP methods (PYOMO)", "status": "pending"}
+    ]
+  }
+] 
