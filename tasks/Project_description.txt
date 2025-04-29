@@ -12,7 +12,7 @@ We can use either  QGIS python library or Geopandads to prepare those maps.
 2.4  Assess wind stats, compare also with global wind atlas info. The global wind atlas is available at https://globalwindatlas.info/en/ and  provides for a good quality check.  	
 2.5 Loss estimation 
 
-3 Road layouts and Crane pads
+3 Road layout<s and Crane pads
 Indication of roads and access infrastructure for turbines and crane pads.  Crane pads for 6MW turbines are WidthxLengh 27.5x40m	
 Turbines usually have a 690V/22kV substation at the foot of the turbine.  They also consume 1-1.5 \% own consumption 
 QGIS is the best candidate for this purpose

@@ -24,3 +24,7 @@ node_modules/
 # OS specific
 .DS_Store
 
+# Added by Claude Task Master
+# Task files
+tasks.json
+tasks/ 
