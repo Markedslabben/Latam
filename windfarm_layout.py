@@ -226,42 +226,45 @@ def plot_layers(layer_dict: dict, layers_to_plot: list = None, ax: plt.Axes = No
 
     legend_elements = []
 
-    # Plot each layer with specific styling
     for layer in layers_to_plot:
         if layer not in layer_dict or layer_dict[layer] is None:
             continue
 
         if layer == 'planning_area':
-            layer_dict[layer].plot(ax=ax, facecolor='none', edgecolor='red', linewidth=2)
-            legend_elements.append(mpatches.Patch(facecolor='none', edgecolor='red',
-                                                linewidth=2, label='Planning Area'))
+            # Plot as red line, linewidth=1, no fill
+            layer_dict[layer].boundary.plot(ax=ax, edgecolor='red', linewidth=1)
+            legend_elements.append(Line2D([0], [0], color='red', linewidth=1, label='Planning Area'))
 
         elif layer == 'contours':
-            layer_dict[layer].plot(ax=ax, cmap='viridis')
-            for _, row in layer_dict[layer].iterrows():
-                plt.annotate(text=str(int(row['ELEV'])),
-                           xy=(row.geometry.centroid.x, row.geometry.centroid.y),
-                           fontsize=8)
-            legend_elements.append(Line2D([0], [0], color='blue', lw=2, label='Contours'))
+            layer_dict[layer].plot(ax=ax, color='brown', alpha=0.5, linewidth=0.5)
+            gdf = layer_dict[layer]
+            for _, row in gdf.iterrows():
+                if 'ELEV' in row:
+                    centroid = row.geometry.centroid
+                    ax.annotate(
+                        text=str(int(row['ELEV'])),
+                        xy=(centroid.x, centroid.y),
+                        fontsize=8, color='black', ha='center', va='center'
+                    )
+            legend_elements.append(Line2D([0], [0], color='brown', linewidth=2, label='Contours'))
 
         elif layer == 'Turbine_distance':
             layer_dict[layer].plot(ax=ax, color='green', alpha=0.3)
-            legend_elements.append(mpatches.Patch(facecolor='green', edgecolor='green',
-                                                alpha=0.3, label='Turbine Distance'))
+            legend_elements.append(mpatches.Patch(facecolor='green', edgecolor='green', alpha=0.3, label='Turbine Distance'))
 
         elif layer == 'turbine_layout':
-            layer_dict[layer].plot(ax=ax, color='red', marker='*', markersize=25)
-            legend_elements.append(Line2D([0], [0], marker='*', color='w',
-                                        markerfacecolor='red', markersize=25,
-                                        label='Turbine Layout', linestyle='None'))
+            # Plot as larger blue circles using ax.scatter
+            gdf = layer_dict[layer].plot(ax=ax,color='blue')
+
+            legend_elements.append(Line2D([0], [0], marker='o', color='w', markerfacecolor='blue', markersize=20, label='Turbines', linestyle='None'))
 
         elif layer == 'internal_roads':
             layer_dict[layer].plot(ax=ax, color='blue', linewidth=5)
-            legend_elements.append(mpatches.Patch(facecolor='brown', edgecolor='brown',
-                                                linewidth=3, label='Internal Road'))
+            legend_elements.append(Line2D([0], [0], color='blue', linewidth=3, label='Internal Road'))
 
     # Add legend and title
-    plt.legend(handles=legend_elements, loc='best')
+    if legend_elements:
+        ax.legend(handles=legend_elements, loc='best')
     plt.title("Wind Farm Planning Overview")
 
     # Save plot if path provided
