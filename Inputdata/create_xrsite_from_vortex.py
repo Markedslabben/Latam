@@ -51,8 +51,8 @@ def main():
     h = [163, 163]  # hub heights (meters)
     times = [0, 1]  # first and second time step
 
-    ws = ds['wind_speed'].isel(time=times).values
-    wd = ds['wind_direction'].isel(time=times).values
+    ws = site.ws(x, y, h, time=times)
+    wd = site.wd(x, y, h, time=times)
 
     print("\nTest query results:")
     print("Wind speeds at x, y, h, time:")
