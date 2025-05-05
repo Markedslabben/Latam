@@ -18,16 +18,20 @@ def create_nordex_n164_turbine(csv_path="Inputdata/Nordex N164.csv"):
     df = df.apply(lambda col: col.astype(str).str.replace(" ", "").astype(float))
 
     wind_speeds = df["wind_speed"].values
-    power = df["power_kw"].values * 1000  # convert kW to W
+    power = df["power_kw"].values  # convert kW to W
     ct = df["ct"].values
-
+    
+    #from IPython import embed # For
+    #embed()  
+    
     # Create power/Ct function with linear interpolation
     power_ct_function = PowerCtTabular(
         wind_speeds,
-        power,'kW',
-        ct
+        power,
+        'kW',
+        ct,
     )
-
+    
     # Create WindTurbine object
     turbine = WindTurbine(
         name="Nordex N164",
@@ -61,3 +65,7 @@ def create_turbine_from_csv(csv_path, name, diameter, hub_height):
         hub_height=hub_height,
         powerCtFunction=PowerCtTabular(wind_speeds, power, ct)
     ) 
+    
+if __name__ == "__main__":
+    # Example usage for debugging
+    turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
