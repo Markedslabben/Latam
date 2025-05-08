@@ -10,10 +10,11 @@ from py_wake.deficit_models import NOJDeficit
 import pandas as pd
 import numpy as np
 import xarray as xr
+from simulation.results_export import write_results_to_csv
 
 
 def main():
-    site = create_site_from_vortex("Inputdata/vortex.serie.850535.6m 164m UTC-04.0 ERA5.txt")
+    site = create_site_from_vortex("Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",start="2024-01-01",end="2024-12-31")
     turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
     wfm = PropagateDownwind(site, turbine, wake_deficitModel=NOJDeficit())
 
@@ -58,3 +59,6 @@ def main():
 if __name__ == "__main__":
     main()
     sim_res = main()
+
+# Example usage:
+write_results_to_csv(sim_res, "my_results.csv")
