@@ -95,11 +95,11 @@ def main():
     tidskolonne['time']=np.arange(0,8784)
     tidskolonne['datetime']=datetimes
     sim_res_df=pd.merge(sim_res_df,tidskolonne,on='time')
-    return sim_res_df,site
+    return sim_res_df,site,sim_res
 
 
 
 if __name__ == "__main__":
     main()
-    sim_res_df,site = main()
+    sim_res_df,site,sim_res = main()
     
