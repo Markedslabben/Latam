@@ -2,391 +2,242 @@
   "tasks": [
     {
       "id": 1,
-      "title": "Acquire and Process Terrain and Wind Data",
-      "description": "Obtain high-resolution terrain data and wind data sources for site analysis and validation.",
+      "title": "Setup Project Environment",
+      "description": "Set up the Python environment with required libraries including pvlib and pandas.",
       "status": "pending",
       "dependencies": [],
       "priority": "high",
-      "details": "1.1 Obtain DTM in WGS 84 UTM 19N (EPSG: 32619). 2.1 Obtain Virtual wind data from Vortex Series. 2.4 Assess wind stats and compare with global wind atlas. Create a comprehensive data repository with all raw and processed datasets.",
-      "testStrategy": "Compare processed wind data with Global Wind Atlas benchmarks. Verify terrain data resolution meets project requirements. Generate validation reports showing data quality metrics.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Obtain and Process Digital Terrain Model (DTM)",
-          "description": "Acquire high-resolution DTM data in WGS 84 UTM 19N coordinate system (EPSG: 32619) and process it for site analysis",
-          "dependencies": [],
-          "details": "Implementation steps:\n1. Source DTM data from appropriate geographic data provider (e.g., USGS, national geographic service)\n2. Verify data is in WGS 84 UTM 19N (EPSG: 32619) coordinate system or reproject if necessary\n3. Process the DTM to extract:\n   - Elevation data for the entire area of interest\n   - Contour lines at appropriate intervals (e.g., 10m, 20m)\n   - Slope and aspect calculations\n4. Create a data structure to store the processed DTM\n5. Implement visualization functions to display the terrain\n6. Save processed data in standardized GIS formats (GeoTIFF, Shapefile)\n7. Document data sources, processing steps, and file locations\n\nTesting approach:\n- Verify coordinate system is correctly applied\n- Validate elevation data against known reference points\n- Check contour generation for accuracy\n- Test visualization functions with sample data",
-          "status": "pending",
-          "parentTaskId": 1
-        },
-        {
-          "id": 2,
-          "title": "Acquire and Process Wind Data",
-          "description": "Obtain virtual wind data from Vortex Series, process it, and compare with global wind atlas for validation",
-          "dependencies": [
-            1
-          ],
-          "details": "Implementation steps:\n1. Acquire virtual wind data from Vortex Series for the project area\n2. Process the wind data to extract:\n   - Wind speed and direction distributions\n   - Seasonal and diurnal patterns\n   - Extreme wind statistics\n3. Download comparative data from Global Wind Atlas for the same region\n4. Implement statistical analysis to compare Vortex data with Global Wind Atlas:\n   - Calculate correlation coefficients\n   - Identify discrepancies\n   - Document potential reasons for differences\n5. Create wind roses and other visualization tools using the processed data\n6. Generate summary statistics for project documentation\n7. Organize all raw and processed wind data in the project repository\n\nTesting approach:\n- Verify data completeness across all time periods\n- Validate wind statistics against expected regional patterns\n- Test visualization functions with sample data\n- Ensure proper integration with the terrain data from subtask 1",
-          "status": "pending",
-          "parentTaskId": 1
-        }
-      ]
+      "details": "Create a virtual environment and install necessary packages: pvlib, pandas, numpy, and matplotlib (for optional visualization). Ensure pvlib is properly configured to access PVGIS API. Verify that all dependencies are correctly installed and accessible.",
+      "testStrategy": "Verify successful import of all required libraries. Test basic pvlib functionality by retrieving sample data from PVGIS API."
     },
     {
       "id": 2,
-      "title": "Preliminary Wind Turbine Layout",
-      "description": "Design and optimize the layout of Nordex 6.x wind turbines considering site constraints and wake effects.",
+      "title": "Define Function Parameters and Structure",
+      "description": "Create the function signature and define all required input parameters for PV production calculation.",
       "status": "pending",
       "dependencies": [
         1
       ],
       "priority": "high",
-      "details": "1.2 Use Cursor IDE and Vibe for turbine positioning, wake losses, and shading tower losses analysis. Design for Nordex 6.x wind turbines with appropriate crane pads (27.5m x 40m) and access infrastructure. Target total wind capacity of 50 MW with expected generation of 180 GWh/year.",
-      "testStrategy": "Run multiple layout scenarios and compare energy yield. Validate wake loss calculations. Ensure all turbines meet minimum spacing requirements and are within site boundaries. Verify total capacity meets 50 MW target.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Obtain Virtual Wind Data from Vortex Series",
-          "description": "Purchase and download virtual wind data from Vortex Series for the project site and parse it into a usable timeseries dataframe format for further analysis.",
-          "dependencies": [],
-          "details": "1. Purchase the Vortex Series virtual wind data package (€650) for the project site coordinates.\n2. Download the raw data files in NetCDF or similar format.\n3. Use Python with libraries like pandas, xarray, or netCDF4 to parse the data.\n4. Create a structured timeseries dataframe with columns for timestamp, wind speed, wind direction, air density, and other relevant parameters.\n5. Implement quality checks to identify any gaps or anomalies in the data.\n6. Save the processed dataframe in a standardized format (CSV, parquet) for use in subsequent analyses.\n7. Test by validating data completeness and generating basic wind roses and histograms.",
-          "status": "pending",
-          "parentTaskId": 2
-        },
-        {
-          "id": 2,
-          "title": "Calculate Energy Production Without Wake Loss",
-          "description": "Use the Nordex 6.x power curve and wind resource data to calculate the theoretical energy production without considering wake effects.",
-          "dependencies": [
-            1
-          ],
-          "details": "1. Import the processed wind data from subtask 1.\n2. Obtain the official Nordex 6.x power curve specifications.\n3. Implement the calculation engine using either ParkOptimizer or NREL Floris.\n4. For each wind speed and direction bin in the dataset, calculate the theoretical power output using the turbine power curve.\n5. Apply air density corrections if necessary.\n6. Aggregate the results to estimate annual energy production (AEP) without wake losses.\n7. Generate production estimates for different potential turbine locations across the site.\n8. Test by comparing results with simplified hand calculations for a few sample points and validating that the total capacity approaches 50 MW with reasonable capacity factors.",
-          "status": "pending",
-          "parentTaskId": 2
-        },
-        {
-          "id": 3,
-          "title": "Calculate Energy Production With Wake Loss",
-          "description": "Model wake effects between turbines and recalculate energy production considering these losses for various potential layout configurations.",
-          "dependencies": [
-            1,
-            2
-          ],
-          "details": "1. Use the same wind resource data and turbine specifications from previous subtasks.\n2. Implement wake modeling using either ParkOptimizer or NREL Floris.\n3. Create multiple potential layout configurations for the Nordex 6.x turbines, ensuring they meet the 50 MW target capacity.\n4. For each layout, calculate the wake effects on downwind turbines for all wind direction sectors.\n5. Recalculate the annual energy production considering these wake losses.\n6. Optimize turbine positions to minimize wake losses while respecting site constraints.\n7. Include crane pad requirements (27.5m x 40m) and access infrastructure in the layout constraints.\n8. Test by comparing wake loss percentages with industry benchmarks and verifying that wake effects increase with closer turbine spacing.",
-          "status": "pending",
-          "parentTaskId": 2
-        },
-        {
-          "id": 4,
-          "title": "Assess Wind Statistics and Compare with Global Wind Atlas",
-          "description": "Analyze the site-specific wind statistics from the Vortex data and validate by comparing with Global Wind Atlas information for the same location.",
-          "dependencies": [
-            1
-          ],
-          "details": "1. Generate comprehensive wind statistics from the Vortex data including mean wind speed, Weibull parameters, wind roses, and turbulence intensity.\n2. Access the Global Wind Atlas data for the same project location.\n3. Create comparative visualizations showing both data sources side by side.\n4. Calculate statistical differences between the datasets.\n5. Assess the reliability of the Vortex data based on this comparison.\n6. Document any significant discrepancies and their potential impact on energy yield calculations.\n7. Test by ensuring statistical methods are correctly implemented and visualizations accurately represent the data distributions.",
-          "status": "pending",
-          "parentTaskId": 2
-        },
-        {
-          "id": 5,
-          "title": "Estimate System Losses and Finalize Layout",
-          "description": "Calculate additional system losses beyond wake effects and finalize the optimal wind farm layout to achieve the target of 50 MW capacity and 180 GWh/year generation.",
-          "dependencies": [
-            2,
-            3,
-            4
-          ],
-          "details": "1. Identify and quantify all relevant loss factors including:\n   - Availability losses (turbine and grid)\n   - Electrical losses\n   - Turbine performance losses\n   - Environmental losses (icing, blade soiling)\n   - Curtailment losses (noise, shadow flicker, grid constraints)\n   - Tower shading losses\n2. Apply these loss factors to the gross energy production calculations.\n3. Finalize the optimal turbine layout that achieves the 50 MW capacity target.\n4. Verify that the expected generation approaches the 180 GWh/year target after all losses.\n5. Create detailed layout maps showing turbine positions, crane pads, and access infrastructure.\n6. Document the expected performance metrics including capacity factor and specific yield (kWh/m²).\n7. Test by comparing the loss assumptions against industry standards and verifying the final layout meets all project requirements.",
-          "status": "pending",
-          "parentTaskId": 2
-        }
-      ]
+      "details": "Create a function named 'calculate_pv_production' that accepts parameters: latitude, longitude, azimuth, tilt, and PV module type. Include optional parameters for time period (defaulting to full year 2024). Document each parameter with appropriate type hints and docstrings.",
+      "testStrategy": "Verify function accepts all parameters correctly. Test with sample inputs to ensure parameters are properly processed."
     },
     {
       "id": 3,
-      "title": "GIS-based Solar PV Zone Analysis",
-      "description": "Perform GIS analysis to identify viable zones for solar PV installation considering wind turbine impacts.",
+      "title": "Implement PVGIS API Connection",
+      "description": "Set up the connection to PVGIS API using pvlib to retrieve representative year data.",
       "status": "pending",
       "dependencies": [
         2
       ],
       "priority": "high",
-      "details": "Conduct GIS-based analysis to identify optimal zones for solar PV installation. 4.1 Analyze tower shading losses from wind turbines. 4.2 Note that dynamic shading losses will be addressed in a future phase. Create shadow maps for different times of day and seasons. Identify zones that minimize shading impact while maximizing available area. Target total solar capacity of 132 MW.",
-      "testStrategy": "Generate shadow simulation models for different times of year. Quantify shading losses in each potential PV zone. Validate that identified zones can accommodate the required 132 MW capacity.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Generate Wind Turbine Shadow Maps",
-          "description": "Create comprehensive shadow maps showing the shading impact of wind turbines at different times of day and across seasons",
-          "dependencies": [],
-          "details": "Implementation steps:\n1. Import wind turbine locations, heights, and rotor diameters into QGIS\n2. Set up a Digital Elevation Model (DEM) of the project area\n3. Calculate sun positions for different times (morning, noon, afternoon) across seasons (winter solstice, equinoxes, summer solstice)\n4. For each time point, generate shadow projections based on turbine height and sun angle\n5. Create composite shadow maps showing frequency and duration of shading\n6. Classify areas by shading impact (high, medium, low frequency)\n7. Export shadow maps as GeoTIFF layers\n\nTesting approach:\n- Validate shadow calculations against known solar position algorithms\n- Compare results with simplified manual calculations for select turbines\n- Verify shadow lengths match expected values for specific dates/times",
-          "status": "pending",
-          "parentTaskId": 3
-        },
-        {
-          "id": 2,
-          "title": "Identify Optimal Solar PV Installation Zones",
-          "description": "Analyze GIS data to identify and rank potential zones for solar PV installation that minimize shading impacts while maximizing available area",
-          "dependencies": [
-            1
-          ],
-          "details": "Implementation steps:\n1. Import shadow maps from subtask 1 into QGIS\n2. Overlay project boundary, existing infrastructure, and environmental constraints\n3. Apply exclusion criteria (areas with >X% shading, protected areas, steep slopes)\n4. Calculate solar irradiation potential across remaining viable areas\n5. Perform multi-criteria analysis weighing factors like:\n   - Distance to existing roads and electrical infrastructure\n   - Shading frequency and duration\n   - Land slope and aspect\n   - Soil conditions and drainage\n6. Rank and classify potential zones based on suitability score\n7. Generate polygons representing optimal installation zones\n\nTesting approach:\n- Verify exclusion criteria are correctly applied\n- Validate multi-criteria analysis with sensitivity testing\n- Ensure sufficient total area is identified to meet 132 MW capacity target",
-          "status": "pending",
-          "parentTaskId": 3
-        },
-        {
-          "id": 3,
-          "title": "Create Solar PV Capacity and Layout Plan",
-          "description": "Develop a detailed layout plan for solar PV installation zones with capacity calculations to achieve the 132 MW target",
-          "dependencies": [
-            1,
-            2
-          ],
-          "details": "Implementation steps:\n1. Import optimal zones from subtask 2\n2. Calculate potential capacity for each zone based on:\n   - Available area (m²)\n   - Standard panel dimensions and spacing\n   - Panel efficiency (kW/m²)\n   - Orientation and tilt optimization\n3. Design preliminary panel array layouts within each zone\n4. Calculate expected energy yield considering:\n   - Solar irradiation data\n   - Shading losses from wind turbines\n   - System losses (1-1.5% own consumption)\n5. Optimize zone selection to achieve 132 MW total capacity\n6. Create detailed maps showing:\n   - Panel array layouts\n   - Connection points to electrical infrastructure\n   - Access roads for maintenance\n7. Generate capacity and production estimates for each zone\n\nTesting approach:\n- Verify capacity calculations match industry standards\n- Ensure total capacity meets 132 MW target\n- Validate that layouts account for maintenance access and infrastructure needs\n- Check that shading impacts are properly incorporated into yield estimates",
-          "status": "pending",
-          "parentTaskId": 3
-        }
-      ]
+      "details": "Use pvlib's PVGIS functions to establish connection to the API. Configure the API request to use the 'representative year' option rather than specific historical data. Handle potential API connection errors and implement appropriate retry logic.",
+      "testStrategy": "Test API connection with sample coordinates. Verify that representative year data is being retrieved correctly. Check error handling by simulating connection failures."
     },
     {
       "id": 4,
-      "title": "Solar PV Block Layout Optimization",
-      "description": "Design and optimize the layout of solar PV blocks within identified viable zones.",
+      "title": "Retrieve Solar Irradiance Data",
+      "description": "Fetch hourly irradiance data for the specified location using the PVGIS API.",
       "status": "pending",
       "dependencies": [
         3
       ],
       "priority": "high",
-      "details": "Optimize PV block layout within viable zones identified in the previous task. Design access roads and infrastructure for PV maintenance. Consider panel tilt, orientation, and row spacing to maximize generation while minimizing land use. Target expected generation of 200 GWh/year from the 132 MW solar capacity.",
-      "testStrategy": "Run solar production simulations on the proposed layout. Verify access road designs meet maintenance requirements. Validate that the layout achieves the target 200 GWh/year generation.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Define PV Block Configuration Parameters",
-          "description": "Determine optimal panel tilt, orientation, and row spacing parameters for the solar PV blocks to maximize generation while minimizing land use",
-          "dependencies": [],
-          "details": "Implementation steps:\n1. Analyze solar irradiance data for the site location to determine optimal panel tilt angle\n2. Calculate optimal row spacing based on panel dimensions and tilt angle to minimize shading\n3. Evaluate east-west vs. south-facing orientation options based on generation profiles\n4. Create a configuration specification document with parameters for:\n   - Panel tilt angle (degrees)\n   - Row spacing (meters)\n   - Panel orientation (azimuth angle)\n   - Panel density (MW/hectare)\n5. Validate configuration against the 200 GWh/year generation target using solar simulation tools\n6. Document rationale for selected parameters\n\nTesting approach:\n- Run solar production simulations with different parameter sets\n- Compare annual yield estimates against the 200 GWh target\n- Verify land use efficiency meets project requirements",
-          "status": "pending",
-          "parentTaskId": 4
-        },
-        {
-          "id": 2,
-          "title": "Design PV Block Layout Within Viable Zones",
-          "description": "Create detailed layout of PV blocks within the identified viable zones, including access roads and maintenance infrastructure",
-          "dependencies": [
-            1
-          ],
-          "details": "Implementation steps:\n1. Import viable zone boundaries from previous task\n2. Apply the configuration parameters from subtask 1 to create standard PV block templates\n3. Place PV blocks within viable zones using an optimization algorithm that maximizes:\n   - Total installed capacity (targeting 132 MW)\n   - Generation efficiency (minimizing shading and edge effects)\n   - Constructability and maintenance access\n4. Design access road network with:\n   - Primary maintenance roads (5-6m width)\n   - Secondary access paths between panel rows\n   - Connection to existing road infrastructure\n5. Allocate space for electrical infrastructure (inverters, transformers, substations)\n6. Calculate precise installed capacity and land utilization metrics\n\nTesting approach:\n- Verify total installed capacity meets 132 MW target\n- Ensure all blocks have adequate maintenance access\n- Check clearances and setbacks from boundaries and obstacles\n- Validate that layout respects all site constraints from previous task",
-          "status": "pending",
-          "parentTaskId": 4
-        },
-        {
-          "id": 3,
-          "title": "Calculate Expected Generation and Optimize Final Layout",
-          "description": "Calculate detailed hourly generation profiles for the designed layout and optimize to meet the 200 GWh/year target",
-          "dependencies": [
-            1,
-            2
-          ],
-          "details": "Implementation steps:\n1. Create a detailed 3D model of the PV plant layout from subtask 2\n2. Perform shading analysis across different times of day and seasons\n3. Generate hourly production profiles using industry-standard solar simulation software (e.g., PVsyst, SAM)\n4. Calculate:\n   - Monthly and annual generation estimates\n   - Performance ratio and specific yield (kWh/kWp)\n   - Losses from shading, soiling, and electrical factors\n5. If generation falls short of 200 GWh/year target:\n   - Identify optimization opportunities in the layout\n   - Adjust block positioning or configuration parameters\n   - Consider alternative technologies (bifacial modules, trackers)\n6. Produce final layout documentation with:\n   - Detailed site plans and block arrangements\n   - Hourly generation profiles for revenue calculations\n   - Performance metrics and loss analysis\n\nTesting approach:\n- Validate generation calculations with multiple simulation tools\n- Compare specific yield with similar projects in the region\n- Perform sensitivity analysis for key assumptions\n- Verify that hourly generation profiles can be used for revenue calculations in subsequent tasks",
-          "status": "pending",
-          "parentTaskId": 4
-        }
-      ]
+      "details": "Use pvlib's get_pvgis_hourly function to retrieve hourly irradiance data (GHI, DNI, DHI) for the specified location. Ensure the data covers the entire representative year. Process the API response to extract relevant irradiance parameters.",
+      "testStrategy": "Verify data completeness (8760 hourly values for a full year). Check that irradiance values are within reasonable ranges. Validate data structure matches expectations."
     },
     {
       "id": 5,
-      "title": "Production Estimate Wind and Solar",
-      "description": "Generate detailed hourly production estimates for both wind and solar components.",
+      "title": "Implement PV Module Selection",
+      "description": "Add functionality to select and configure PV module parameters from pvlib's module database.",
       "status": "pending",
       "dependencies": [
-        2,
-        4
+        2
       ],
       "priority": "medium",
-      "details": "2.2 Calculate Energy production without wake loss. 2.3 Calculate Energy production with wake loss. 2.5 Perform loss estimation for wind production. For solar, incorporate shading effects from wind turbines in the generation model. Combine both sources to create an integrated hourly production profile for the hybrid plant.",
-      "testStrategy": "Compare production estimates against industry benchmarks for similar installations. Validate that combined annual production meets targets (Wind: 180 GWh/year, Solar: 200 GWh/year). Perform sensitivity analysis on key assumptions.",
-      "subtasks": [
-        {
-          "id": 1,
-          "title": "Calculate Wind Energy Production with Wake Loss Analysis",
-          "description": "Implement wind energy production calculation including wake loss effects and other loss factors",
-          "dependencies": [],
-          "details": "Implementation steps:\n1. Use existing wind resource data (wind speeds, directions) as input\n2. Calculate theoretical energy production without wake effects using power curves\n3. Implement wake loss model to account for turbine interference\n4. Apply additional loss factors (electrical, availability, etc.)\n5. Generate hourly wind production time series for the entire plant\n\nTesting approach:\n- Validate against industry benchmarks for similar wind farms\n- Compare wake loss percentages with typical ranges (5-15%)\n- Verify that production correlates properly with wind speed patterns",
-          "status": "pending",
-          "parentTaskId": 5
-        },
-        {
-          "id": 2,
-          "title": "Implement Tower Shading Model for Solar PV",
-          "description": "Calculate shading losses on solar panels caused by wind turbine towers",
-          "dependencies": [],
-          "details": "Implementation steps:\n1. Create geometric model of turbine towers (height, width)\n2. Calculate sun position for each hour throughout the year\n3. Project shadows from towers onto the solar array areas\n4. Calculate percentage of shaded area for each hour\n5. Determine yearly average shading loss percentage\n\nTesting approach:\n- Verify shadow calculations with simple test cases\n- Compare results with typical shading losses in literature\n- Visualize shadow patterns for key dates (solstices, equinoxes)",
-          "status": "done",
-          "parentTaskId": 5
-        },
-        {
-          "id": 3,
-          "title": "Generate Solar PV Production Estimates with Shading Effects",
-          "description": "Calculate hourly solar energy production incorporating shading losses from wind turbines",
-          "dependencies": [
-            2
-          ],
-          "details": "Implementation steps:\n1. Use solar irradiance data and panel specifications as inputs\n2. Calculate theoretical solar production without shading\n3. Apply shading loss factors from subtask 2\n4. Include other standard loss factors (soiling, temperature, etc.)\n5. Generate hourly solar production time series\n\nTesting approach:\n- Validate against PVsyst or similar industry tools\n- Check that production correlates with solar irradiance patterns\n- Verify that shading effects reduce production appropriately",
-          "status": "done",
-          "parentTaskId": 5
-        },
-        {
-          "id": 4,
-          "title": "Create Integrated Hybrid Plant Production Profile and Revenue Estimate",
-          "description": "Combine wind and solar production data and calculate revenue estimates with and without BESS",
-          "dependencies": [
-            1,
-            3
-          ],
-          "details": "Implementation steps:\n1. Combine hourly wind and solar production into a single integrated profile\n2. Calculate revenue without BESS using applicable electricity price data\n3. Model BESS operation with 50% of solar PV capacity using perfect foresight\n4. Calculate optimized revenue with BESS by time-shifting production\n5. Generate comparative analysis of both scenarios\n\nTesting approach:\n- Verify that combined production matches sum of individual components\n- Check BESS operation logic with test cases (charging during low prices, discharging during high prices)\n- Compare revenue improvements with industry benchmarks for similar hybrid systems",
-          "status": "pending",
-          "parentTaskId": 5
-        }
-      ]
+      "details": "Access pvlib's CEC module database to retrieve parameters for the specified PV module type. If a specific module isn't provided, use a default high-quality module. Extract relevant module parameters such as efficiency, temperature coefficients, etc.",
+      "testStrategy": "Test with various module types to ensure correct parameter retrieval. Verify handling of invalid module types with appropriate error messages."
     },
     {
       "id": 6,
-      "title": "Revenue Projection and Economic Analysis",
-      "description": "Analyze hourly price data and calculate revenue projections for the hybrid plant.",
+      "title": "Calculate Solar Position",
+      "description": "Calculate solar position for each hour of the year based on location.",
       "status": "pending",
       "dependencies": [
-        5
+        4
       ],
       "priority": "medium",
-      "details": "4.1 Obtain hourly price data for the Dominican Republic market. 4.3 Calculate hourly revenues by combining with production estimates. 4.4 Include solar PV production in revenue calculations. Consider seasonal variations in both production and pricing. Evaluate the economic impact of different operational strategies.",
-      "testStrategy": "Perform scenario analysis with different price assumptions. Validate revenue calculations against historical data from similar projects. Create sensitivity models for key economic variables."
+      "details": "Use pvlib's solar_position module to calculate solar zenith, azimuth, and other position parameters for each hour in the dataset. Create a time series for the entire representative year with hourly intervals.",
+      "testStrategy": "Verify solar position calculations against known values for specific dates/times. Check for completeness of the time series data."
     },
     {
       "id": 7,
-      "title": "Road Layout and Electrical Infrastructure Design",
-      "description": "Design the road layout, crane pads, and electrical infrastructure including substations and grid connection.",
+      "title": "Calculate Plane of Array Irradiance",
+      "description": "Transform irradiance data to the plane of array based on tilt and azimuth inputs.",
       "status": "pending",
       "dependencies": [
-        2,
-        4
+        4,
+        6
       ],
       "priority": "high",
-      "details": "Design road layout and crane pads (27.5x40m) for 6MW turbines. Design 690V/22kV substations for wind turbines. Plan main substation layout for the entire hybrid plant. Assess grid connection limitations in the Dominican Republic location. Create single-line diagrams for the electrical system. Design cable routes and calculate losses. Ensure compliance with local grid codes and standards.",
-      "testStrategy": "Perform load flow analysis to validate substation designs. Verify compliance with grid connection requirements. Review designs against applicable electrical codes and standards. Simulate fault scenarios to verify protection system design."
+      "details": "Use pvlib's irradiance module to translate the GHI, DNI, and DHI values to the plane of array (POA) based on the specified tilt and azimuth angles. Account for ground reflectance using a typical albedo value.",
+      "testStrategy": "Compare POA irradiance with GHI values to ensure they follow expected patterns (POA should be higher than GHI for optimally oriented surfaces in the respective hemisphere)."
     },
     {
       "id": 8,
-      "title": "BESS Integration Assessment",
-      "description": "Evaluate battery energy storage system integration options and perform cost-benefit analysis.",
+      "title": "Calculate PV Cell Temperature",
+      "description": "Model PV cell temperature based on irradiance, ambient temperature, and module characteristics.",
       "status": "pending",
       "dependencies": [
         5,
-        6,
         7
       ],
       "priority": "medium",
-      "details": "Evaluate BESS integration options with size set to 50% of solar PV capacity. Model battery charge/discharge constraints and cost-benefit analysis. Analyze how BESS can mitigate production variability and enhance revenue. Consider grid limitations and potential ancillary service opportunities. Create operational strategies for the integrated BESS.",
-      "testStrategy": "Simulate BESS operation with actual production profiles. Calculate ROI for the BESS configuration (50% of solar PV capacity). Validate that proposed BESS designs comply with grid requirements. Test operational strategies under various scenarios."
+      "details": "Use pvlib's temperature model (e.g., SAPM or other appropriate model) to calculate cell temperature for each hour based on irradiance, ambient temperature from the weather data, and module characteristics. Consider wind speed effects if available in the data.",
+      "testStrategy": "Verify temperature calculations follow expected patterns (higher during high irradiance, lower at night). Check for reasonable temperature ranges based on climate at the specified location."
     },
     {
       "id": 9,
-      "title": "Hybrid System Overview Map",
-      "description": "Create a detailed site layout integrating all components of the hybrid power plant.",
+      "title": "Calculate Hourly PV Production",
+      "description": "Calculate the hourly electricity production for 1 kWp of installed capacity.",
       "status": "pending",
       "dependencies": [
-        2,
-        4,
         7,
         8
       ],
       "priority": "high",
-      "details": "5.1 Document overall production and revenue without BESS. 5.2 Include revenue estimate with BESS (50% of solar PV capacity). Develop a comprehensive site layout integrating wind turbines, solar PV arrays, substations, BESS, and all access infrastructure. Ensure efficient land use while maintaining required spacing and access. Create detailed maps and 3D visualizations of the complete site.",
-      "testStrategy": "Review site layout with construction and maintenance experts. Verify that all components have adequate access. Ensure compliance with all spatial constraints and safety requirements. Validate that the layout accommodates all required components within site boundaries."
+      "details": "Use pvlib's PV system performance model to calculate DC power output based on POA irradiance, cell temperature, and module parameters. Convert to AC power using a simple efficiency factor if inverter details aren't specified. Scale results to represent exactly 1 kWp of installed capacity. Convert power (kW) to energy (kWh) for hourly intervals.",
+      "testStrategy": "Verify that daily and annual production totals fall within the expected range (1600-1800 kWh/kWp annually). Check for reasonable diurnal and seasonal patterns in the output data."
     },
     {
       "id": 10,
-      "title": "Control System Design and Grid Compliance",
-      "description": "Design control and monitoring systems ensuring compliance with grid requirements.",
+      "title": "Format and Return Results",
+      "description": "Format the calculated PV production data into the required DataFrame structure.",
       "status": "pending",
       "dependencies": [
-        5,
-        7,
-        8,
         9
       ],
       "priority": "medium",
-      "details": "Design control and monitoring systems for the hybrid plant. Optimize hybrid system operation to maximize revenue and grid stability. Ensure compliance with Dominican Republic grid requirements including power quality, fault ride-through, and dispatch capabilities. Design SCADA architecture and communication protocols. Include cybersecurity measures for all control systems.",
-      "testStrategy": "Simulate grid disturbances to verify compliance with grid codes. Test control system response to various operational scenarios. Perform cybersecurity assessment of control systems. Validate that the control system can optimize plant operation based on production and price data."
+      "details": "Create a pandas DataFrame with two columns: 'time' and 'kWh/kWp'. Ensure the time column covers the period from 2024-01-01 00:00 to 2024-12-31 23:59 with hourly resolution. Format the time column as a datetime object. Verify the total annual production falls within the expected range of 1600-1800 kWh/kWp.",
+      "testStrategy": "Verify DataFrame structure matches requirements. Check for missing values or gaps in the time series. Validate that annual sum is within the expected range. Test the function with various locations to ensure results vary appropriately with geography."
     },
     {
       "id": 11,
-      "title": "Consolidate and Document Solar Shading Analysis and Production Estimates",
-      "description": "Organize all solar shading analysis code, data, visualizations, and findings into a well-structured repository with comprehensive documentation of methodology and results.",
-      "details": "This task involves creating a clear organizational structure for all work completed on solar shading analysis and production estimates. The developer should:\n\n1. Code Organization:\n   - Create a logical folder structure for all scripts and code files\n   - Ensure consistent naming conventions across files\n   - Add appropriate comments and docstrings to all functions\n   - Create a README.md file explaining the purpose and usage of each script\n\n2. Visualization Consolidation:\n   - Organize all plot outputs into a dedicated 'visualizations' directory\n   - Create subdirectories by visualization type (e.g., heatmaps, time series, etc.)\n   - Ensure all plots have clear titles, labels, and legends\n   - Generate an index document cataloging all visualizations with descriptions\n\n3. Methodology Documentation:\n   - Create a detailed technical document explaining the shading loss calculation methodology\n   - Include mathematical formulas, assumptions, and limitations\n   - Document any calibration or validation procedures used\n   - Provide references to academic or industry sources that informed the approach\n\n4. Data Organization:\n   - Establish a consistent structure for raw data, processed data, and intermediate results\n   - Include metadata files describing data sources, collection methods, and timestamps\n   - Document any data cleaning or preprocessing steps applied\n   - Ensure reproducibility by documenting data transformation pipelines\n\n5. Summary Reporting:\n   - Create an executive summary of key findings (2-3 pages)\n   - Develop a comprehensive technical report with detailed analysis\n   - Include visualizations that best illustrate the findings\n   - Highlight implications for the overall project and next steps\n\nAll documentation should follow a consistent format and be written with sufficient detail that another team member could understand and reproduce the work.",
-      "testStrategy": "Verification of this task should include:\n\n1. Repository Structure Review:\n   - Verify that all code, data, and documentation follow the defined structure\n   - Check that naming conventions are consistent and intuitive\n   - Confirm all files are in their appropriate directories\n\n2. Documentation Completeness Check:\n   - Review all README files to ensure they adequately explain their respective components\n   - Verify that the methodology document includes all required elements (formulas, assumptions, etc.)\n   - Check that all visualizations have accompanying descriptions\n\n3. Reproducibility Test:\n   - Have a team member not involved in the original work attempt to reproduce key results using only the documentation provided\n   - They should be able to run scripts successfully and generate similar outputs\n\n4. Peer Review:\n   - Conduct a formal peer review of the technical documentation for accuracy and clarity\n   - Ensure the executive summary effectively communicates findings to non-technical stakeholders\n\n5. Gap Analysis:\n   - Create a checklist of all expected components and verify each is present and complete\n   - Identify any missing information or areas that need additional clarification\n\n6. Documentation Standards Compliance:\n   - Verify all documentation follows project standards for formatting and detail level\n   - Check that all code documentation meets the project's coding standards\n\nThe task is complete when all documentation is organized according to the structure, all code is properly commented, all visualizations are properly labeled and organized, and another team member can understand and reproduce the work based solely on the documentation provided.",
+      "title": "Develop Hourly PV Production Calculator Function Using pvlib and PVGIS",
+      "description": "Create a function that calculates hourly photovoltaic production for a 1 kWp solar PV system at a specified location using pvlib and PVGIS data, returning a DataFrame with time and production values.",
+      "details": "Implement a Python function that calculates the hourly electricity production of a 1 kWp solar PV system based on location parameters (latitude, longitude), system configuration (azimuth, tilt), and PV module specifications. The function should:\n\n1. Accept input parameters: latitude, longitude, azimuth, tilt, and PV module type\n2. Connect to the PVGIS API to retrieve TMY (Typical Meteorological Year) data for the specified location\n3. Process the retrieved data to extract relevant solar irradiance and temperature information\n4. Allow selection from common PV module types or custom module parameters\n5. Calculate solar position for each hour using pvlib's solar position algorithms\n6. Determine plane-of-array irradiance based on the system orientation\n7. Model PV cell temperature based on ambient conditions and module characteristics\n8. Calculate DC and AC power production for each hour accounting for all relevant losses\n9. Convert power to energy (kWh) and normalize to per kWp\n10. Return a well-structured DataFrame with datetime index and hourly production values\n\nThe implementation should target an annual production of 1600-1800 kWh/kWp for typical European locations with optimal orientation. The code should handle error cases gracefully, including API connection failures, invalid location parameters, and edge cases in calculations.",
+      "testStrategy": "Testing should verify both the functionality and accuracy of the PV production calculator:\n\n1. Unit tests:\n   - Test with known locations and compare results to expected ranges\n   - Verify correct handling of edge cases (extreme latitudes, night hours, etc.)\n   - Test error handling with invalid inputs (out-of-range coordinates, invalid module types)\n\n2. Integration tests:\n   - Compare results against PVGIS web calculator output for the same parameters\n   - Verify API connection and data retrieval works correctly\n   - Test with different module types and system configurations\n\n3. Validation tests:\n   - Verify annual production falls within 1600-1800 kWh/kWp for optimal configurations in European locations\n   - Check seasonal patterns match expected solar resource distribution\n   - Validate hourly profiles against typical production curves\n\n4. Performance tests:\n   - Measure execution time for multiple location calculations\n   - Test caching mechanisms if implemented\n\nCreate a test suite with at least 5 reference locations across different climate zones and compare results with PVGIS web interface outputs. Maximum acceptable deviation should be ±5% for annual totals and ±10% for monthly totals.",
       "status": "pending",
-      "dependencies": [
-        5
-      ],
+      "dependencies": [],
       "priority": "high",
       "subtasks": [
         {
           "id": 1,
-          "title": "Create Structured Code Repository with Documentation",
-          "description": "Establish a well-organized code repository with proper structure, documentation, and dependency management for all solar shading analysis scripts.",
+          "title": "Set up project environment and dependencies",
+          "description": "Set up the development environment with all necessary libraries and dependencies for the PV production calculator function.",
           "dependencies": [],
-          "details": "Implementation steps:\n1. Create a logical directory structure with folders for 'src' (core functions), 'scripts' (analysis scripts), 'tests', and 'docs'\n2. Move all existing code files into appropriate directories\n3. Implement consistent naming conventions (snake_case for files and functions)\n4. Add comprehensive docstrings to all functions following a standard format (purpose, parameters, returns, examples)\n5. Create a detailed README.md file explaining repository structure, installation instructions, and usage examples\n6. Generate a requirements.txt file listing all dependencies with version numbers\n7. Add inline comments for complex code sections\n8. Create a CONTRIBUTING.md file with coding standards and contribution guidelines\n\nTesting approach:\n- Verify all imports work after restructuring\n- Ensure documentation builds correctly\n- Have a team member attempt to set up the environment using only the documentation",
+          "details": "Implementation details:\n1. Create a virtual environment for the project\n2. Install required packages: pvlib, pandas, numpy, requests\n3. Set up a basic project structure with appropriate modules\n4. Create a requirements.txt file documenting all dependencies\n5. Set up basic logging configuration\n6. Create unit test framework structure\n\nTesting approach:\n- Verify all dependencies install correctly\n- Confirm imports work without errors\n- Run a simple test to ensure pvlib and other key libraries function as expected",
           "status": "pending",
           "parentTaskId": 11
         },
         {
           "id": 2,
-          "title": "Organize and Document Data Pipeline",
-          "description": "Create a standardized data organization structure with clear documentation of data sources, processing steps, and outputs.",
+          "title": "Define function parameters and structure",
+          "description": "Define the function signature, input parameters, validation logic, and overall structure of the PV production calculator.",
           "dependencies": [
             1
           ],
-          "details": "Implementation steps:\n1. Create a structured 'data' directory with subdirectories for 'raw', 'processed', 'interim', and 'output'\n2. Move all existing data files to appropriate locations\n3. Create metadata files (JSON or YAML) for each dataset documenting source, collection date, and content description\n4. Document all data cleaning and preprocessing steps in a dedicated markdown file\n5. Create data processing scripts that clearly show the transformation pipeline from raw to final data\n6. Generate data dictionaries for all datasets explaining each variable\n7. Implement data versioning to track changes\n8. Create a data flow diagram showing how data moves through the pipeline\n\nTesting approach:\n- Verify all data processing scripts run with the new directory structure\n- Ensure all data transformations are reproducible\n- Validate that metadata accurately describes each dataset",
+          "details": "Implementation details:\n1. Create the main function with parameters: latitude, longitude, azimuth, tilt, and module_type\n2. Implement input validation for all parameters (range checks, type checks)\n3. Define default values for optional parameters\n4. Create docstring with detailed parameter descriptions and return value information\n5. Implement error handling structure with appropriate exceptions\n6. Define the overall function flow with placeholder functions for each major step\n\nTesting approach:\n- Test input validation with valid and invalid parameters\n- Verify error handling works correctly for edge cases\n- Check that default values are applied correctly",
           "status": "pending",
           "parentTaskId": 11
         },
         {
           "id": 3,
-          "title": "Consolidate and Standardize Visualizations",
-          "description": "Organize all visualizations into a structured directory with standardized formatting, clear labeling, and comprehensive documentation.",
+          "title": "Implement PVGIS API connection and error handling",
+          "description": "Create a function to connect to the PVGIS API, handle connection issues, and retrieve TMY data for a specified location.",
           "dependencies": [
-            1,
             2
           ],
-          "details": "Implementation steps:\n1. Create a 'visualizations' directory with subdirectories by type (heatmaps, time_series, comparisons, etc.)\n2. Develop standardized plotting functions with consistent styling (colors, fonts, sizes)\n3. Ensure all plots have clear titles, axis labels, legends, and units\n4. Generate high-resolution versions of all plots in multiple formats (PNG, SVG, PDF)\n5. Create an index.md file cataloging all visualizations with descriptions and links\n6. Add metadata to each visualization file (creation date, data source, script that generated it)\n7. Implement consistent naming convention for visualization files\n8. Create composite visualizations that summarize key findings\n\nTesting approach:\n- Verify all visualization scripts run with the new directory structure\n- Check that all plots have proper labels and are readable\n- Ensure visualization index is complete and accurate",
+          "details": "Implementation details:\n1. Create a function to build the PVGIS API URL with proper parameters\n2. Implement the API request with appropriate timeout and retry logic\n3. Add error handling for connection failures, API errors, and invalid responses\n4. Implement caching mechanism to avoid redundant API calls\n5. Parse the API response to extract the TMY data\n6. Add logging for API interactions\n\nTesting approach:\n- Test with mock responses to simulate successful and failed API calls\n- Verify correct handling of different HTTP status codes\n- Test with real API calls for a few sample locations\n- Verify caching mechanism works correctly",
           "status": "pending",
           "parentTaskId": 11
         },
         {
           "id": 4,
-          "title": "Document Methodology and Technical Approach",
-          "description": "Create comprehensive technical documentation explaining the solar shading analysis methodology, mathematical models, assumptions, and validation procedures.",
+          "title": "Process and validate TMY data",
+          "description": "Process the raw TMY data from PVGIS to extract and validate relevant solar irradiance and temperature information.",
           "dependencies": [
-            1,
-            2,
             3
           ],
-          "details": "Implementation steps:\n1. Create a detailed methodology.md document explaining the shading loss calculation approach\n2. Document all mathematical formulas used with proper notation and explanations\n3. List and justify all assumptions made in the analysis\n4. Describe the limitations of the current approach\n5. Document any calibration or validation procedures with results\n6. Create a workflow diagram showing the analysis process from inputs to outputs\n7. Include references to academic papers or industry standards that informed the methodology\n8. Document any alternative approaches considered and why they were not used\n\nTesting approach:\n- Have a technical peer review the methodology documentation for accuracy\n- Verify all formulas are correctly represented\n- Ensure the workflow diagram accurately represents the implemented process",
+          "details": "Implementation details:\n1. Parse the TMY data structure from PVGIS response\n2. Extract relevant columns: global horizontal irradiance (GHI), direct normal irradiance (DNI), diffuse horizontal irradiance (DHI), ambient temperature\n3. Convert time information to proper datetime objects with timezone information\n4. Validate data completeness and handle missing values\n5. Create a structured DataFrame with all necessary meteorological data\n6. Implement quality checks for the extracted data\n\nTesting approach:\n- Test with sample TMY data files\n- Verify correct handling of different data formats\n- Check handling of missing or corrupted data\n- Validate timezone conversion accuracy",
           "status": "pending",
           "parentTaskId": 11
         },
         {
           "id": 5,
-          "title": "Generate Comprehensive Results Summary and Reports",
-          "description": "Create executive and technical summary reports of key findings with supporting visualizations, tables, and recommendations.",
+          "title": "Implement PV module selection and parameter configuration",
+          "description": "Create a module selection system that allows users to choose from common PV module types or specify custom module parameters.",
           "dependencies": [
-            1,
-            2,
-            3,
+            2
+          ],
+          "details": "Implementation details:\n1. Define a dictionary of common PV module types with their parameters (e.g., efficiency, temperature coefficients)\n2. Implement a function to retrieve module parameters based on module_type input\n3. Allow for custom module specification through parameter overrides\n4. Include default values for common module types (monocrystalline, polycrystalline, thin-film)\n5. Validate module parameters for physical correctness\n6. Create a module configuration object to be used in subsequent calculations\n\nTesting approach:\n- Test selection of each predefined module type\n- Verify custom parameter specification works correctly\n- Test validation logic with valid and invalid module parameters\n- Check that default values are applied correctly when needed",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 6,
+          "title": "Calculate solar position using pvlib",
+          "description": "Implement solar position calculation for each hour using pvlib's solar position algorithms based on location and time data.",
+          "dependencies": [
             4
           ],
-          "details": "Implementation steps:\n1. Create an executive summary (2-3 pages) highlighting key findings and implications\n2. Develop a comprehensive technical report with detailed analysis results\n3. Generate summary tables of key metrics and results\n4. Include the most informative visualizations with explanations\n5. Document key insights and their significance to the project\n6. Highlight limitations and areas for future improvement\n7. Create an appendix with additional supporting data and visualizations\n8. Include recommendations for next steps based on the findings\n\nTesting approach:\n- Have both technical and non-technical team members review the reports\n- Verify all referenced data and visualizations are accurate\n- Ensure the executive summary effectively communicates the most important findings\n- Check that all tables and figures are properly referenced in the text",
+          "details": "Implementation details:\n1. Create a function to calculate solar position (zenith, azimuth) for each timestamp\n2. Use pvlib's solar position algorithms with the processed TMY data\n3. Handle edge cases like nighttime hours and extreme latitudes\n4. Calculate solar elevation angle from zenith angle\n5. Filter out nighttime hours where applicable\n6. Store solar position data in the working DataFrame\n\nTesting approach:\n- Test with different latitudes including edge cases (equator, polar regions)\n- Verify calculations against known solar positions for specific dates/locations\n- Check handling of nighttime hours\n- Validate results against alternative solar position calculators",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 7,
+          "title": "Calculate plane-of-array irradiance",
+          "description": "Calculate the irradiance on the tilted plane of the PV array based on system orientation, solar position, and irradiance components.",
+          "dependencies": [
+            6
+          ],
+          "details": "Implementation details:\n1. Implement a function to calculate plane-of-array (POA) irradiance\n2. Use pvlib's transposition models to convert GHI, DNI, and DHI to POA irradiance\n3. Account for system azimuth and tilt angles\n4. Implement multiple irradiance transposition models (e.g., Hay, Perez, isotropic)\n5. Calculate beam, diffuse, and ground-reflected components\n6. Add POA irradiance components to the working DataFrame\n\nTesting approach:\n- Test with different azimuth and tilt combinations\n- Verify results against known POA values for specific conditions\n- Compare results from different transposition models\n- Check edge cases (vertical panels, horizontal panels)",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 8,
+          "title": "Model PV cell temperature",
+          "description": "Implement PV cell temperature modeling based on ambient conditions, irradiance, and module characteristics.",
+          "dependencies": [
+            5,
+            7
+          ],
+          "details": "Implementation details:\n1. Create a function to calculate cell temperature using ambient temperature and irradiance\n2. Implement multiple temperature models (e.g., NOCT, Sandia)\n3. Account for module-specific temperature coefficients\n4. Handle low-irradiance conditions appropriately\n5. Calculate and store cell temperature for each hour in the DataFrame\n6. Implement validation to ensure physically reasonable temperature values\n\nTesting approach:\n- Test with various ambient temperature and irradiance combinations\n- Verify results against known cell temperature models\n- Check handling of extreme conditions (very high/low temperatures)\n- Validate temperature impact on module efficiency",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 9,
+          "title": "Calculate DC and AC power production",
+          "description": "Calculate the DC and AC power production for each hour accounting for all relevant losses and conversion factors.",
+          "dependencies": [
+            7,
+            8
+          ],
+          "details": "Implementation details:\n1. Create a function to calculate DC power based on POA irradiance, cell temperature, and module parameters\n2. Implement PV module performance model using pvlib's single diode model\n3. Account for temperature-dependent efficiency changes\n4. Model DC to AC conversion with appropriate inverter efficiency\n5. Account for system losses (wiring, soiling, mismatch, etc.)\n6. Calculate hourly energy production in kWh\n7. Normalize results to per kWp capacity\n\nTesting approach:\n- Test with various irradiance and temperature combinations\n- Verify results against expected production values\n- Check handling of edge cases (very low irradiance, extreme temperatures)\n- Validate annual production falls within expected range (1600-1800 kWh/kWp for optimal European locations)",
+          "status": "pending",
+          "parentTaskId": 11
+        },
+        {
+          "id": 10,
+          "title": "Format and return results",
+          "description": "Format the calculated hourly production data into a well-structured DataFrame and implement the final return functionality.",
+          "dependencies": [
+            9
+          ],
+          "details": "Implementation details:\n1. Create a function to format the final results DataFrame\n2. Set up a proper datetime index with timezone information\n3. Include relevant columns: timestamp, production (kWh), and optionally irradiance and temperature\n4. Calculate summary statistics (daily, monthly, annual totals)\n5. Implement data export options (CSV, JSON)\n6. Add metadata about the calculation parameters\n7. Ensure proper handling of different time periods (partial years, etc.)\n\nTesting approach:\n- Verify DataFrame structure and column names\n- Check datetime index formatting and timezone handling\n- Validate summary statistics calculations\n- Test export functionality with different formats\n- Verify full function integration with end-to-end tests using real locations",
           "status": "pending",
           "parentTaskId": 11
         }
@@ -394,9 +245,9 @@
     }
   ],
   "metadata": {
-    "projectName": "Latam Hybrid Wind-Solar Power Plant",
+    "projectName": "PV Production Calculator Implementation",
     "totalTasks": 10,
-    "sourceFile": "C:\\Users\\klaus\\klauspython\\Latam\\scripts\\PRD.txt",
-    "generatedAt": "2023-11-15"
+    "sourceFile": "task_012.txt",
+    "generatedAt": "2023-11-14"
   }
 }

@@ -10,11 +10,38 @@ from py_wake.deficit_models import NOJDeficit
 import pandas as pd
 import numpy as np
 import xarray as xr
-from simulation.results_export import write_results_to_csv
-
+from PV_galvian.read_pvgis import read_pvgis
 
 def main():
-    site = create_site_from_vortex("Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",start="2024-01-01",end="2024-12-31")
+    # Coordinates lat
+    #Lat=19.71814 , Lon= -71.35602     
+    # Read price data 
+    electricity_price = pd.read_csv("Inputdata/Electricity price 2024 grid node.csv")
+    # Read pvgis data
+    df_temp = read_pvgis("Inputdata/PVGIS timeseries.csv")
+    
+    # Get values for Feb 28 (hours 1416-1439) to duplicate for Feb 29
+    feb28_values = df_temp.power[1416:1440].values
+    
+    # Create array with leap year by inserting Feb 29 values
+    power_values = np.concatenate([
+        df_temp.power[0:1440].values,    # Jan 1 - Feb 28
+        feb28_values,                     # Feb 29 (copied from Feb 28) 
+        df_temp.power[1440:8760].values  # Mar 1 - Dec 31
+    ])
+    power_values = np.array(power_values,dtype=float)
+    Installed_Capacity = 120 # installed capacity kWp  solar
+    df_pv = pd.DataFrame({
+        'time': np.arange(0,8784),
+        'PV_CF': power_values*Installed_Capacity
+    })
+    
+    
+    
+    
+    site = create_site_from_vortex("Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",start="2024-01-01 00:00",end="2024-12-31 23:59")
+    
+    # Add 
     turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
     wfm = PropagateDownwind(site, turbine, wake_deficitModel=NOJDeficit())
 
@@ -46,7 +73,7 @@ def main():
             "wind_speed": ("time", ws),
             "wind_direction": ("time", wd),
             "P": (("time", "turbine"), power),
-            "TI": ("time", 1/ws+0.04)
+            "TI": ("time", 1/ws+0.04),
         },
         coords={
             "time": np.arange(len(times)),
@@ -54,11 +81,25 @@ def main():
         }
     )
 
-    return sim_res
+    # Convert integer time indices to datetime, starting from 2024-01-01 00:00
+    start_time = pd.to_datetime('2024-01-01 00:00')
+    ds['2time'] = ('time', [start_time + pd.Timedelta(hours=i) for i in ds['time'].values])
+
+
+    sim_res_df = sim_res.to_dataframe()
+    sim_res_df= pd.merge(sim_res_df, electricity_price,on='time')
+    sim_res_df = pd.merge(sim_res_df,df_pv,on='time')
+    # Replace hourly index with datetime
+    datetimes = pd.date_range(start='2024-01-01 00:00', periods=8784, freq='H')
+    tidskolonne=pd.DataFrame()
+    tidskolonne['time']=np.arange(0,8784)
+    tidskolonne['datetime']=datetimes
+    sim_res_df=pd.merge(sim_res_df,tidskolonne,on='time')
+    return sim_res_df,site
+
+
 
 if __name__ == "__main__":
     main()
-    sim_res = main()
-
-# Example usage:
-write_results_to_csv(sim_res, "my_results.csv")
+    sim_res_df,site = main()
+    
