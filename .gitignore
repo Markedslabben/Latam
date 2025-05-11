@@ -1,3 +1,50 @@
+# Ignore everything by default
+*
+
+# But not these file types:
+!*.py
+!*.ipynb
+!*.txt
+!*.json
+!*.md
+!*.mdc
+
+# Allow directories (so you can add files inside them)
+!*/
+
+# Never ignore .gitignore itself
+!.gitignore
+
+# Explicitly ignore unwanted/binary/geodata/image/archive files
+*.pdf
+*.docx
+*.shp
+*.shx
+*.dbf
+*.prj
+*.gpkg
+*.tif
+*.tiff
+*.jpg
+*.jpeg
+*.png
+*.csv
+*.xls
+*.xlsx
+*.zip
+*.tar
+*.gz
+*.rar
+
+# Ignore OS/editor/system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+__pycache__/
+node_modules/
+.env
+
 # Logs
 logs
 *.log
@@ -6,25 +53,7 @@ yarn-debug.log*
 yarn-error.log*
 dev-debug.log
 
-# Dependency directories
-node_modules/
-
-# Environment variables
-.env
-
-# Editor directories and files
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# OS specific
-.DS_Store
-
 # Added by Claude Task Master
 # Task files
 tasks.json
-tasks/ 
+tasks/
