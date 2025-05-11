@@ -2,14 +2,17 @@ import pandas as pd
 import xarray as xr
 from py_wake.site.xrsite import XRSite
 import numpy as np
+import scipy.stats
 
-def create_site_from_vortex(file_path, start=None, end=None):
+
+def create_site_from_vortex(file_path, start=None, end=None, include_leap_year=False):
     """
-    Create an XRSite object from a Vortex wind data file, with optional time period selection.
+    Create an XRSite object from a Vortex wind data file, with optional time period selection and leap year handling.
     Args:
         file_path (str): Path to the Vortex wind data file
         start (str or None): Optional start datetime (e.g., '2020-01-01' or '2020-01-01 00:00')
         end (str or None): Optional end datetime (e.g., '2020-12-31' or '2020-12-31 23:59')
+        include_leap_year (bool): If False (default), ignore Feb 29th data in leap years.
     Returns:
         XRSite: Configured XRSite object
     """
@@ -34,6 +37,10 @@ def create_site_from_vortex(file_path, start=None, end=None):
     if end is not None:
         df = df[df["datetime"] <= pd.to_datetime(end)]
 
+    # Remove Feb 29th if include_leap_year is False
+    if not include_leap_year:
+        df = df[~((df["datetime"].dt.month == 2) & (df["datetime"].dt.day == 29))]
+
     # For time series, XRSite requires a 'P' variable (probability/time weight)
     P = [1.0] * len(df)
 
@@ -55,8 +62,8 @@ def create_site_from_vortex(file_path, start=None, end=None):
         coords={"time": time_idx}
     )
 
-    site = XRSite(ds, interp_method='nearest')
-    return site
+    time_site = XRSite(ds, interp_method='nearest')
+    return time_site
 
 def write_results_to_csv(results, output_file):
     """
@@ -86,3 +93,59 @@ def write_results_to_csv(results, output_file):
     df = df[columns]
     # Write to CSV
     df.to_csv(output_file, index=False, sep=',') 
+
+def create_wind_distribution(time_site, n_sectors=12):
+    """
+    Convert time series wind data to Weibull parameters and sector frequencies.
+
+    Args:
+        time_site (XRSite): XRSite object containing time series wind data
+        n_sectors (int, optional): Number of wind direction sectors (default: 12, i.e., 30-degree bins)
+    Returns:
+        freq (np.ndarray): Frequency of each wind direction sector
+        A (np.ndarray): Weibull scale parameter for each sector
+        k (np.ndarray): Weibull shape parameter for each sector
+        wd_centers (np.ndarray): Center wind direction of each sector
+        TI (np.ndarray): Turbulence intensity for each sector
+    """
+    ws = time_site.ds.wind_speed.values
+    wd = time_site.ds.wind_direction.values
+    wd_bins = np.linspace(0, 360, n_sectors + 1)
+    wd_centers = (wd_bins[:-1] + wd_bins[1:]) / 2
+    A = np.zeros(n_sectors)
+    k = np.zeros(n_sectors)
+    freq = np.zeros(n_sectors)
+    TI = np.zeros(n_sectors)
+    wd_digitized = np.digitize(wd, wd_bins, right=False) - 1
+    wd_digitized[wd_digitized == n_sectors] = 0  # wrap 360° to sector 0
+    for i in range(n_sectors):
+        mask = wd_digitized == i
+        ws_bin = ws[mask]
+        freq[i] = np.sum(mask) / len(ws)
+        if len(ws_bin) > 0:
+            c, loc, scale = scipy.stats.weibull_min.fit(ws_bin, floc=0)
+            A[i] = scale
+            k[i] = c
+            ws_mean = np.mean(ws_bin)
+            TI[i] = 1/ws_mean + 0.04
+        else:
+            A[i] = np.nan
+            k[i] = np.nan
+            TI[i] = 0.1
+            print(f'Warning: No wind data in sector {i} ({wd_bins[i]}-{wd_bins[i+1]} deg); setting TI to 0.1')
+    print('TI per sector:', TI)
+    return freq, A, k, wd_centers, TI
+
+def create_weibull_site(freq, A, k, wd_centers):
+    """
+    Create a WeibullSite from frequency, Weibull parameters, and wind direction centers.
+    Args:
+        freq (np.ndarray): Frequency of each wind direction sector
+        A (np.ndarray): Weibull scale parameter for each sector
+        k (np.ndarray): Weibull shape parameter for each sector
+        wd_centers (np.ndarray): Center wind direction of each sector
+    Returns:
+        WeibullSite: Site object using direction-dependent Weibull wind distribution
+    """
+    weibull_site =  xrsite(p_wd=freq, A=A, k=k, wd=wd_centers)
+    return weibull_site
