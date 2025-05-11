@@ -65,34 +65,6 @@ def create_site_from_vortex(file_path, start=None, end=None, include_leap_year=F
     time_site = XRSite(ds, interp_method='nearest')
     return time_site
 
-def write_results_to_csv(results, output_file):
-    """
-    Write simulation results to a CSV file suitable for Excel pivot tables.
-    Args:
-        results (list of dict or pd.DataFrame): Simulation results with required columns.
-        output_file (str): Path to the output CSV file.
-    Columns:
-        datetime| wind direction | wind speed | turbulence intensity | turbine no. | power |  WS_eff | TI_eff
-        - datetime is formatted as dd.mm.yyyy HH:MM
-    """
-    # Convert to DataFrame if needed
-    df = pd.DataFrame(results)
-    # Format the datetime column
-    df['datetime'] = pd.to_datetime(df['datetime']).dt.strftime('%d.%m.%Y %H:%M')
-    # Ensure column order
-    columns = [
-        'datetime',
-        'wind direction',
-        'wind speed',
-        'turbulence intensity',
-        'turbine no.',
-        'power',
-        'WS_eff',
-        'TI_eff'
-    ]
-    df = df[columns]
-    # Write to CSV
-    df.to_csv(output_file, index=False, sep=',') 
 
 def create_wind_distribution(time_site, n_sectors=12):
     """
@@ -136,7 +108,7 @@ def create_wind_distribution(time_site, n_sectors=12):
     print('TI per sector:', TI)
     return freq, A, k, wd_centers, TI
 
-def create_weibull_site(freq, A, k, wd_centers):
+def create_weibull_site(freq, A, k, wd_centers,TI):
     """
     Create a WeibullSite from frequency, Weibull parameters, and wind direction centers.
     Args:
@@ -147,5 +119,37 @@ def create_weibull_site(freq, A, k, wd_centers):
     Returns:
         WeibullSite: Site object using direction-dependent Weibull wind distribution
     """
-    weibull_site =  xrsite(p_wd=freq, A=A, k=k, wd=wd_centers)
+    #weibull_site = XRSite(p_wd=freq, A=A, k=k, wd=wd_centers)
+    wd_bins = np.linspace(0, 360, len(freq),endpoint=False)
+    weibull_site = XRSite(ds=xr.Dataset(data_vars={'Sector_frequency': ('wd', freq), 'Weibull_A': ('wd', A), 
+                                                   'Weibull_k': ('wd', k), 'TI': ('wd',TI)},coords={'wd': wd_bins}))
     return weibull_site
+
+# def write_results_to_csv(results, output_file):
+#     """
+#     Write simulation results to a CSV file suitable for Excel pivot tables.
+#     Args:
+#         results (list of dict or pd.DataFrame): Simulation results with required columns.
+#         output_file (str): Path to the output CSV file.
+#     Columns:
+#         datetime| wind direction | wind speed | turbulence intensity | turbine no. | power |  WS_eff | TI_eff
+#         - datetime is formatted as dd.mm.yyyy HH:MM
+#     """
+#     # Convert to DataFrame if needed
+#     df = pd.DataFrame(results)
+#     # Format the datetime column
+#     df['datetime'] = pd.to_datetime(df['datetime']).dt.strftime('%d.%m.%Y %H:%M')
+#     # Ensure column order
+#     columns = [
+#         'datetime',
+#         'wind direction',
+#         'wind speed',
+#         'turbulence intensity',
+#         'turbine no.',
+#         'power',
+#         'WS_eff',
+#         'TI_eff'
+#     ]
+#     df = df[columns]
+#     # Write to CSV
+#     df.to_csv(output_file, index=False, sep=',')
