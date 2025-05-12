@@ -3,30 +3,30 @@
     {
       "id": 1,
       "title": "Setup Project Environment",
-      "description": "Set up the Python environment with required libraries including pvlib and pandas.",
-      "status": "pending",
+      "description": "Set up the Python environment with required libraries including pvlib, pandas, and PyWake for wind simulations.",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
-      "details": "Create a virtual environment and install necessary packages: pvlib, pandas, numpy, and matplotlib (for optional visualization). Ensure pvlib is properly configured to access PVGIS API. Verify that all dependencies are correctly installed and accessible.",
-      "testStrategy": "Verify successful import of all required libraries. Test basic pvlib functionality by retrieving sample data from PVGIS API."
+      "details": "Create a virtual environment and install necessary packages: pvlib, pandas, numpy, matplotlib (for visualization), and PyWake for wind simulations. Ensure pvlib is properly configured to access PVGIS API and PyWake is configured for wind simulations. Verify that all dependencies are correctly installed and accessible.",
+      "testStrategy": "Verify successful import of all required libraries. Test basic pvlib functionality by retrieving sample data from PVGIS API. Test basic PyWake functionality by running a simple wind simulation."
     },
     {
       "id": 2,
       "title": "Define Function Parameters and Structure",
-      "description": "Create the function signature and define all required input parameters for PV production calculation.",
-      "status": "pending",
+      "description": "Create the function signature and define all required input parameters for PV production and wind simulation calculations.",
+      "status": "done",
       "dependencies": [
         1
       ],
       "priority": "high",
-      "details": "Create a function named 'calculate_pv_production' that accepts parameters: latitude, longitude, azimuth, tilt, and PV module type. Include optional parameters for time period (defaulting to full year 2024). Document each parameter with appropriate type hints and docstrings.",
-      "testStrategy": "Verify function accepts all parameters correctly. Test with sample inputs to ensure parameters are properly processed."
+      "details": "Create a function named 'calculate_pv_production' that accepts parameters: latitude, longitude, azimuth, tilt, and PV module type. Include optional parameters for time period (defaulting to full year 2024). Add an option to merge PV data using hour_of_year, repeating for all years in the simulation. Create additional functions for wind simulation with appropriate parameters. Document each parameter with appropriate type hints and docstrings.",
+      "testStrategy": "Verify function accepts all parameters correctly. Test with sample inputs to ensure parameters are properly processed. Verify the hour_of_year merging functionality works correctly for multi-year simulations."
     },
     {
       "id": 3,
       "title": "Implement PVGIS API Connection",
       "description": "Set up the connection to PVGIS API using pvlib to retrieve representative year data.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         2
       ],
@@ -38,7 +38,7 @@
       "id": 4,
       "title": "Retrieve Solar Irradiance Data",
       "description": "Fetch hourly irradiance data for the specified location using the PVGIS API.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         3
       ],
@@ -50,7 +50,7 @@
       "id": 5,
       "title": "Implement PV Module Selection",
       "description": "Add functionality to select and configure PV module parameters from pvlib's module database.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         2
       ],
@@ -62,7 +62,7 @@
       "id": 6,
       "title": "Calculate Solar Position",
       "description": "Calculate solar position for each hour of the year based on location.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         4
       ],
@@ -74,7 +74,7 @@
       "id": 7,
       "title": "Calculate Plane of Array Irradiance",
       "description": "Transform irradiance data to the plane of array based on tilt and azimuth inputs.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         4,
         6
@@ -87,7 +87,7 @@
       "id": 8,
       "title": "Calculate PV Cell Temperature",
       "description": "Model PV cell temperature based on irradiance, ambient temperature, and module characteristics.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         5,
         7
@@ -100,7 +100,7 @@
       "id": 9,
       "title": "Calculate Hourly PV Production",
       "description": "Calculate the hourly electricity production for 1 kWp of installed capacity.",
-      "status": "pending",
+      "status": "done",
       "dependencies": [
         7,
         8
@@ -112,22 +112,22 @@
     {
       "id": 10,
       "title": "Format and Return Results",
-      "description": "Format the calculated PV production data into the required DataFrame structure.",
-      "status": "pending",
+      "description": "Format the calculated PV production data into the required DataFrame structure with options for merging with wind simulation data.",
+      "status": "done",
       "dependencies": [
         9
       ],
       "priority": "medium",
-      "details": "Create a pandas DataFrame with two columns: 'time' and 'kWh/kWp'. Ensure the time column covers the period from 2024-01-01 00:00 to 2024-12-31 23:59 with hourly resolution. Format the time column as a datetime object. Verify the total annual production falls within the expected range of 1600-1800 kWh/kWp.",
-      "testStrategy": "Verify DataFrame structure matches requirements. Check for missing values or gaps in the time series. Validate that annual sum is within the expected range. Test the function with various locations to ensure results vary appropriately with geography."
+      "details": "Create a pandas DataFrame with two columns: 'time' and 'kWh/kWp'. Ensure the time column covers the period from 2024-01-01 00:00 to 2024-12-31 23:59 with hourly resolution. Format the time column as a datetime object. Implement the hour_of_year merging option to allow repeating the PV data for all years in a multi-year simulation. Verify the total annual production falls within the expected range of 1600-1800 kWh/kWp. Include options to merge with wind simulation results.",
+      "testStrategy": "Verify DataFrame structure matches requirements. Check for missing values or gaps in the time series. Validate that annual sum is within the expected range. Test the function with various locations to ensure results vary appropriately with geography. Test the hour_of_year merging functionality with multi-year datasets."
     },
     {
       "id": 11,
-      "title": "Develop Hourly PV Production Calculator Function Using pvlib and PVGIS",
-      "description": "Create a function that calculates hourly photovoltaic production for a 1 kWp solar PV system at a specified location using pvlib and PVGIS data, returning a DataFrame with time and production values.",
-      "details": "Implement a Python function that calculates the hourly electricity production of a 1 kWp solar PV system based on location parameters (latitude, longitude), system configuration (azimuth, tilt), and PV module specifications. The function should:\n\n1. Accept input parameters: latitude, longitude, azimuth, tilt, and PV module type\n2. Connect to the PVGIS API to retrieve TMY (Typical Meteorological Year) data for the specified location\n3. Process the retrieved data to extract relevant solar irradiance and temperature information\n4. Allow selection from common PV module types or custom module parameters\n5. Calculate solar position for each hour using pvlib's solar position algorithms\n6. Determine plane-of-array irradiance based on the system orientation\n7. Model PV cell temperature based on ambient conditions and module characteristics\n8. Calculate DC and AC power production for each hour accounting for all relevant losses\n9. Convert power to energy (kWh) and normalize to per kWp\n10. Return a well-structured DataFrame with datetime index and hourly production values\n\nThe implementation should target an annual production of 1600-1800 kWh/kWp for typical European locations with optimal orientation. The code should handle error cases gracefully, including API connection failures, invalid location parameters, and edge cases in calculations.",
-      "testStrategy": "Testing should verify both the functionality and accuracy of the PV production calculator:\n\n1. Unit tests:\n   - Test with known locations and compare results to expected ranges\n   - Verify correct handling of edge cases (extreme latitudes, night hours, etc.)\n   - Test error handling with invalid inputs (out-of-range coordinates, invalid module types)\n\n2. Integration tests:\n   - Compare results against PVGIS web calculator output for the same parameters\n   - Verify API connection and data retrieval works correctly\n   - Test with different module types and system configurations\n\n3. Validation tests:\n   - Verify annual production falls within 1600-1800 kWh/kWp for optimal configurations in European locations\n   - Check seasonal patterns match expected solar resource distribution\n   - Validate hourly profiles against typical production curves\n\n4. Performance tests:\n   - Measure execution time for multiple location calculations\n   - Test caching mechanisms if implemented\n\nCreate a test suite with at least 5 reference locations across different climate zones and compare results with PVGIS web interface outputs. Maximum acceptable deviation should be ±5% for annual totals and ±10% for monthly totals.",
-      "status": "pending",
+      "title": "Develop Hourly PV Production and Wind Simulation Calculator",
+      "description": "Create functions that calculate hourly photovoltaic production for a 1 kWp solar PV system and wind power production with wake effects at specified locations, returning DataFrames with time and production values.",
+      "details": "Implement Python functions that calculate the hourly electricity production of solar PV and wind systems based on location parameters, system configurations, and equipment specifications. The functions should:\n\n1. Accept input parameters for both PV (latitude, longitude, azimuth, tilt, module type) and wind (turbine specifications, layout, wind data)\n2. Connect to the PVGIS API for PV and use PyWake for wind simulations\n3. Process the retrieved data to extract relevant solar irradiance, temperature, and wind information\n4. Allow selection from common PV module types and wind turbine models\n5. Calculate solar position and plane-of-array irradiance for PV systems\n6. Implement wake loss calculation by running wind simulations with and without wakes (using NoWakeDeficit and BastankhahGaussianDeficit)\n7. Create wind distributions that return Weibull fit objects for each sector\n8. Support both time series and distribution-based AEP calculations for wind\n9. Provide options for using joint frequency matrices (wind rose) as an alternative to Weibull fits\n10. Include functionality to merge PV data using hour_of_year for multi-year simulations\n11. Return well-structured DataFrames with datetime indices and production values\n\nThe implementation should target realistic production values for both technologies. The code should handle error cases gracefully, including API connection failures, invalid parameters, and edge cases in calculations. Include tools for comparing and analyzing discrepancies between time series and distribution-based AEP calculations.",
+      "testStrategy": "Testing should verify both the functionality and accuracy of the PV and wind production calculators:\n\n1. Unit tests:\n   - Test with known locations and compare results to expected ranges\n   - Verify correct handling of edge cases (extreme latitudes, night hours, etc.)\n   - Test error handling with invalid inputs (out-of-range coordinates, invalid module types)\n   - Test wake loss calculations with and without wake effects\n\n2. Integration tests:\n   - Compare PV results against PVGIS web calculator output for the same parameters\n   - Compare wind results against industry-standard tools\n   - Verify API connections and data retrieval work correctly\n   - Test with different module/turbine types and system configurations\n   - Validate the hour_of_year merging functionality for multi-year simulations\n\n3. Validation tests:\n   - Verify production falls within expected ranges for both technologies\n   - Check seasonal patterns match expected resource distribution\n   - Validate hourly profiles against typical production curves\n   - Compare time series and distribution-based AEP calculations\n   - Verify normalization and sectorwise fit issues are properly addressed\n\n4. Performance tests:\n   - Measure execution time for multiple location calculations\n   - Test caching mechanisms if implemented\n\nCreate test suites with reference locations across different climate zones and compare results with industry-standard tools. Maximum acceptable deviation should be ±5% for annual totals and ±10% for monthly totals.",
+      "status": "done",
       "dependencies": [],
       "priority": "high",
       "subtasks": [
@@ -137,7 +137,7 @@
           "description": "Set up the development environment with all necessary libraries and dependencies for the PV production calculator function.",
           "dependencies": [],
           "details": "Implementation details:\n1. Create a virtual environment for the project\n2. Install required packages: pvlib, pandas, numpy, requests\n3. Set up a basic project structure with appropriate modules\n4. Create a requirements.txt file documenting all dependencies\n5. Set up basic logging configuration\n6. Create unit test framework structure\n\nTesting approach:\n- Verify all dependencies install correctly\n- Confirm imports work without errors\n- Run a simple test to ensure pvlib and other key libraries function as expected",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -148,7 +148,7 @@
             1
           ],
           "details": "Implementation details:\n1. Create the main function with parameters: latitude, longitude, azimuth, tilt, and module_type\n2. Implement input validation for all parameters (range checks, type checks)\n3. Define default values for optional parameters\n4. Create docstring with detailed parameter descriptions and return value information\n5. Implement error handling structure with appropriate exceptions\n6. Define the overall function flow with placeholder functions for each major step\n\nTesting approach:\n- Test input validation with valid and invalid parameters\n- Verify error handling works correctly for edge cases\n- Check that default values are applied correctly",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -159,7 +159,7 @@
             2
           ],
           "details": "Implementation details:\n1. Create a function to build the PVGIS API URL with proper parameters\n2. Implement the API request with appropriate timeout and retry logic\n3. Add error handling for connection failures, API errors, and invalid responses\n4. Implement caching mechanism to avoid redundant API calls\n5. Parse the API response to extract the TMY data\n6. Add logging for API interactions\n\nTesting approach:\n- Test with mock responses to simulate successful and failed API calls\n- Verify correct handling of different HTTP status codes\n- Test with real API calls for a few sample locations\n- Verify caching mechanism works correctly",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -170,7 +170,7 @@
             3
           ],
           "details": "Implementation details:\n1. Parse the TMY data structure from PVGIS response\n2. Extract relevant columns: global horizontal irradiance (GHI), direct normal irradiance (DNI), diffuse horizontal irradiance (DHI), ambient temperature\n3. Convert time information to proper datetime objects with timezone information\n4. Validate data completeness and handle missing values\n5. Create a structured DataFrame with all necessary meteorological data\n6. Implement quality checks for the extracted data\n\nTesting approach:\n- Test with sample TMY data files\n- Verify correct handling of different data formats\n- Check handling of missing or corrupted data\n- Validate timezone conversion accuracy",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -181,7 +181,7 @@
             2
           ],
           "details": "Implementation details:\n1. Define a dictionary of common PV module types with their parameters (e.g., efficiency, temperature coefficients)\n2. Implement a function to retrieve module parameters based on module_type input\n3. Allow for custom module specification through parameter overrides\n4. Include default values for common module types (monocrystalline, polycrystalline, thin-film)\n5. Validate module parameters for physical correctness\n6. Create a module configuration object to be used in subsequent calculations\n\nTesting approach:\n- Test selection of each predefined module type\n- Verify custom parameter specification works correctly\n- Test validation logic with valid and invalid module parameters\n- Check that default values are applied correctly when needed",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -192,7 +192,7 @@
             4
           ],
           "details": "Implementation details:\n1. Create a function to calculate solar position (zenith, azimuth) for each timestamp\n2. Use pvlib's solar position algorithms with the processed TMY data\n3. Handle edge cases like nighttime hours and extreme latitudes\n4. Calculate solar elevation angle from zenith angle\n5. Filter out nighttime hours where applicable\n6. Store solar position data in the working DataFrame\n\nTesting approach:\n- Test with different latitudes including edge cases (equator, polar regions)\n- Verify calculations against known solar positions for specific dates/locations\n- Check handling of nighttime hours\n- Validate results against alternative solar position calculators",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -203,7 +203,7 @@
             6
           ],
           "details": "Implementation details:\n1. Implement a function to calculate plane-of-array (POA) irradiance\n2. Use pvlib's transposition models to convert GHI, DNI, and DHI to POA irradiance\n3. Account for system azimuth and tilt angles\n4. Implement multiple irradiance transposition models (e.g., Hay, Perez, isotropic)\n5. Calculate beam, diffuse, and ground-reflected components\n6. Add POA irradiance components to the working DataFrame\n\nTesting approach:\n- Test with different azimuth and tilt combinations\n- Verify results against known POA values for specific conditions\n- Compare results from different transposition models\n- Check edge cases (vertical panels, horizontal panels)",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -215,7 +215,7 @@
             7
           ],
           "details": "Implementation details:\n1. Create a function to calculate cell temperature using ambient temperature and irradiance\n2. Implement multiple temperature models (e.g., NOCT, Sandia)\n3. Account for module-specific temperature coefficients\n4. Handle low-irradiance conditions appropriately\n5. Calculate and store cell temperature for each hour in the DataFrame\n6. Implement validation to ensure physically reasonable temperature values\n\nTesting approach:\n- Test with various ambient temperature and irradiance combinations\n- Verify results against known cell temperature models\n- Check handling of extreme conditions (very high/low temperatures)\n- Validate temperature impact on module efficiency",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -227,7 +227,7 @@
             8
           ],
           "details": "Implementation details:\n1. Create a function to calculate DC power based on POA irradiance, cell temperature, and module parameters\n2. Implement PV module performance model using pvlib's single diode model\n3. Account for temperature-dependent efficiency changes\n4. Model DC to AC conversion with appropriate inverter efficiency\n5. Account for system losses (wiring, soiling, mismatch, etc.)\n6. Calculate hourly energy production in kWh\n7. Normalize results to per kWp capacity\n\nTesting approach:\n- Test with various irradiance and temperature combinations\n- Verify results against expected production values\n- Check handling of edge cases (very low irradiance, extreme temperatures)\n- Validate annual production falls within expected range (1600-1800 kWh/kWp for optimal European locations)",
-          "status": "pending",
+          "status": "done",
           "parentTaskId": 11
         },
         {
@@ -237,8 +237,64 @@
           "dependencies": [
             9
           ],
-          "details": "Implementation details:\n1. Create a function to format the final results DataFrame\n2. Set up a proper datetime index with timezone information\n3. Include relevant columns: timestamp, production (kWh), and optionally irradiance and temperature\n4. Calculate summary statistics (daily, monthly, annual totals)\n5. Implement data export options (CSV, JSON)\n6. Add metadata about the calculation parameters\n7. Ensure proper handling of different time periods (partial years, etc.)\n\nTesting approach:\n- Verify DataFrame structure and column names\n- Check datetime index formatting and timezone handling\n- Validate summary statistics calculations\n- Test export functionality with different formats\n- Verify full function integration with end-to-end tests using real locations",
-          "status": "pending",
+          "details": "Implementation details:\n1. Create a function to format the final results DataFrame\n2. Set up a proper datetime index with timezone information\n3. Include relevant columns: timestamp, production (kWh), and optionally irradiance and temperature\n4. Calculate summary statistics (daily, monthly, annual totals)\n5. Implement data export options (CSV, JSON)\n6. Add metadata about the calculation parameters\n7. Ensure proper handling of different time periods (partial years, etc.)\n8. Implement hour_of_year merging option for multi-year simulations\n\nTesting approach:\n- Verify DataFrame structure and column names\n- Check datetime index formatting and timezone handling\n- Validate summary statistics calculations\n- Test export functionality with different formats\n- Verify full function integration with end-to-end tests using real locations\n- Test hour_of_year merging with multi-year datasets",
+          "status": "done",
+          "parentTaskId": 11
+        },
+        {
+          "id": 11,
+          "title": "Implement wind distribution creation",
+          "description": "Create a function to generate wind distributions and return Weibull fit objects for each sector.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation details:\n1. Develop create_wind_distribution function that processes wind data\n2. Calculate frequency distributions for each wind direction sector\n3. Fit Weibull distributions to each sector's wind speed data\n4. Return Weibull fit objects for each sector that can be used in simulations\n5. Include validation and error handling for input data\n6. Add options for sector size configuration\n\nTesting approach:\n- Test with sample wind datasets\n- Verify Weibull parameters are physically reasonable\n- Compare fitted distributions to original data histograms\n- Check handling of sectors with limited data points",
+          "status": "done",
+          "parentTaskId": 11
+        },
+        {
+          "id": 12,
+          "title": "Implement wake loss calculation",
+          "description": "Develop functionality to calculate wake losses by running simulations with and without wake effects.",
+          "dependencies": [
+            11
+          ],
+          "details": "Implementation details:\n1. Create functions to run wind farm simulations using PyWake\n2. Implement simulations with NoWakeDeficit for baseline production\n3. Implement simulations with BastankhahGaussianDeficit for wake-affected production\n4. Calculate wake losses as the difference between the two simulations\n5. Support both time series and distribution-based approaches\n6. Add detailed logging of wake effect calculations\n\nTesting approach:\n- Test with various wind farm layouts\n- Verify wake losses increase with closer turbine spacing\n- Compare results to theoretical expectations\n- Validate against other wake models when possible",
+          "status": "done",
+          "parentTaskId": 11
+        },
+        {
+          "id": 13,
+          "title": "Implement time series and distribution-based AEP calculations",
+          "description": "Create functions to calculate Annual Energy Production using both time series and distribution-based approaches.",
+          "dependencies": [
+            12
+          ],
+          "details": "Implementation details:\n1. Implement time series AEP calculation using hourly wind data\n2. Implement distribution-based AEP using Weibull fits or joint frequency matrices\n3. Add functionality to compare results from both approaches\n4. Investigate and document reasons for discrepancies (normalization, sectorwise fit issues)\n5. Provide options to adjust calculation parameters to minimize differences\n6. Include detailed reporting of calculation steps and intermediate results\n\nTesting approach:\n- Compare time series and distribution-based results for consistency\n- Verify total AEP values against industry benchmarks\n- Test with various wind regimes and farm configurations\n- Validate normalization approaches",
+          "status": "done",
+          "parentTaskId": 11
+        },
+        {
+          "id": 14,
+          "title": "Implement data merging and visualization",
+          "description": "Create functions to merge PV and wind data and visualize combined results.",
+          "dependencies": [
+            10,
+            13
+          ],
+          "details": "Implementation details:\n1. Develop functions to merge PV and wind production data\n2. Implement hour_of_year merging for PV data in multi-year simulations\n3. Create visualization functions for combined production profiles\n4. Add options for temporal aggregation (hourly, daily, monthly)\n5. Implement export functionality for combined datasets\n6. Create summary statistics for combined production\n\nTesting approach:\n- Test merging with various dataset combinations\n- Verify hour_of_year merging works correctly\n- Check visualization outputs for clarity and accuracy\n- Validate combined statistics against individual component sums",
+          "status": "done",
+          "parentTaskId": 11
+        },
+        {
+          "id": 15,
+          "title": "Code cleanup and documentation",
+          "description": "Clean up code, remove accidental pastes, and improve documentation throughout the codebase.",
+          "dependencies": [
+            14
+          ],
+          "details": "Implementation details:\n1. Review and clean up all code files\n2. Remove any accidental code pastes, particularly in run_simulation_weibull.py\n3. Improve code clarity with better variable names and comments\n4. Create comprehensive documentation for all functions\n5. Add usage examples for common scenarios\n6. Create a troubleshooting guide for common issues\n7. Document the workflow for combined PV and wind simulations\n\nTesting approach:\n- Verify documentation accuracy with example runs\n- Check that code cleanup doesn't affect functionality\n- Review documentation for completeness and clarity\n- Test examples to ensure they work as described",
+          "status": "done",
           "parentTaskId": 11
         }
       ]

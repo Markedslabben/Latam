@@ -12,7 +12,7 @@ import xarray as xr
 importlib.reload(turbine_galvian.create_turbine)
 importlib.reload(site_galvian.create_site)
 
-def main(start_year=2024, n_sectors=12, include_leap_year=False):
+def main(start_year=2024, end_year=2024, n_sectors=12, include_leap_year=False):
     # 1. Create time series site from Vortex data
     time_site = create_site_from_vortex(
         "Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",
@@ -22,7 +22,7 @@ def main(start_year=2024, n_sectors=12, include_leap_year=False):
     )
 
     # 2. Create Weibull parameters and sector frequencies from time series site
-    freq, A, k, wd_centers, TI = create_wind_distribution(time_site, n_sectors=n_sectors)
+    freq, A, k, wd_centers, TI , weibull_fits= create_wind_distribution(time_site, n_sectors=n_sectors)
 
     # 3. Create WeibullSite
     weibull_site = create_weibull_site(freq, A, k, wd_centers,TI)
@@ -50,7 +50,8 @@ def main(start_year=2024, n_sectors=12, include_leap_year=False):
   #  print("k:", k)
   #  print("wd_centers:", wd_centers)
   #  print("TI:", TI)
-    return sim_res, weibull_site
+    return sim_res, weibull_site,wfm
 
 if __name__ == "__main__":
-    sim_res, weibull_site = main() 
+    sim_res, weibull_site,wfm = main() 
+

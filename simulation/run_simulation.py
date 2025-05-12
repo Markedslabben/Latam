@@ -6,6 +6,7 @@ from site_galvian.create_site import create_site_from_vortex
 from py_wake.wind_farm_models import PropagateDownwind
 from py_wake.deficit_models import NOJDeficit
 from py_wake.deficit_models import BastankhahGaussianDeficit
+from py_wake.deficit_models import NoWakeDeficit
 import pandas as pd
 import numpy as np
 import xarray as xr
@@ -14,7 +15,7 @@ import calendar
 importlib.reload(turbine_galvian.create_turbine)
 importlib.reload(site_galvian.create_site)
 
-def main(start_year=2024):
+def main(start_year=2014,end_year=2024):
     # Coordinates lat
     #Lat=19.71814 , Lon= -71.35602     
     
@@ -35,7 +36,7 @@ def main(start_year=2024):
     
     # Read wind data (time_site)
     include_leap_year = False  # Set this flag as needed for the simulation
-    time_site = create_site_from_vortex("Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",start=f"{start_year}-01-01 00:00",end=f"{start_year}-12-31 23:59", include_leap_year=include_leap_year)
+    time_site = create_site_from_vortex("Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",start=f"{start_year}-01-01 00:00",end=f"{end_year}-12-31 23:59", include_leap_year=include_leap_year)
     
 
     # Add 
@@ -46,6 +47,7 @@ def main(start_year=2024):
     y = turbine_coords["y_coord"].values
     
     # Choose time series or weibull based simulation
+    # Use BastankhahGaussianDeficit for wakes and NoWakeDeficit for no wakes.  
     wfm = PropagateDownwind(time_site, turbine, wake_deficitModel=BastankhahGaussianDeficit())
     # Extract time, wind direction, and wind speed arrays from time_site dataset
     times = time_site.ds['time'].values
@@ -81,16 +83,27 @@ def main(start_year=2024):
     # Convert integer time indices to datetime, starting from start_year-01-01 00:00
     start_time = pd.to_datetime(f'{start_year}-01-01 00:00')
     ds['2time'] = ('time', [start_time + pd.Timedelta(hours=i) for i in ds['time'].values])
-
+    #import IPython; IPython.embed()
     sim_res_df = sim_res.to_dataframe()
-    sim_res_df= pd.merge(sim_res_df, electricity_price,on='time')
-    sim_res_df = pd.merge(sim_res_df,df_pv,on='time')
+    # Ensure 'time' is a column, not just an index
+    if 'time' not in sim_res_df.columns and 'time' in sim_res_df.index.names:
+        sim_res_df = sim_res_df.reset_index()
+    # Repeat electricity price for every year by merging on hour_of_year
+    hours_in_year = len(electricity_price)
+    sim_res_df['hour_of_year'] = sim_res_df['time'] % hours_in_year
+    electricity_price['hour_of_year'] = electricity_price['time']
+    sim_res_df = pd.merge(sim_res_df, electricity_price.drop('time', axis=1), on='hour_of_year', how='left')
+    
+    # Repeat PV data for every year by merging on hour_of_year
+    df_pv['hour_of_year'] = df_pv['time']
+    sim_res_df = pd.merge(sim_res_df, df_pv.drop('time', axis=1), on='hour_of_year', how='left')
+    
+    sim_res_df = sim_res_df.drop('hour_of_year', axis=1)
     # Replace hourly index with datetime
-    datetimes = pd.date_range(start=f'{start_year}-01-01 00:00', periods=len(power_values), freq='H')
-    tidskolonne=pd.DataFrame()
-    tidskolonne['time']=np.arange(len(power_values))
-    tidskolonne['datetime']=datetimes
-    sim_res_df=pd.merge(sim_res_df,tidskolonne,on='time')
+    n_timesteps = sim_res_df['time'].max() + 1
+    datetimes = pd.date_range(start=f'{start_year}-01-01 00:00', periods=n_timesteps, freq='H')
+    tidskolonne = pd.DataFrame({'time': np.arange(n_timesteps), 'datetime': datetimes})
+    sim_res_df = pd.merge(sim_res_df, tidskolonne, on='time', how='left')
     return sim_res_df, time_site, sim_res    
     
     

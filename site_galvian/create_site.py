@@ -79,6 +79,7 @@ def create_wind_distribution(time_site, n_sectors=12):
         k (np.ndarray): Weibull shape parameter for each sector
         wd_centers (np.ndarray): Center wind direction of each sector
         TI (np.ndarray): Turbulence intensity for each sector
+        weibull_fits (list): List of scipy.stats.rv_frozen Weibull fit objects for each sector
     """
     ws = time_site.ds.wind_speed.values
     wd = time_site.ds.wind_direction.values
@@ -88,6 +89,7 @@ def create_wind_distribution(time_site, n_sectors=12):
     k = np.zeros(n_sectors)
     freq = np.zeros(n_sectors)
     TI = np.zeros(n_sectors)
+    weibull_fits = []
     wd_digitized = np.digitize(wd, wd_bins, right=False) - 1
     wd_digitized[wd_digitized == n_sectors] = 0  # wrap 360° to sector 0
     for i in range(n_sectors):
@@ -100,13 +102,16 @@ def create_wind_distribution(time_site, n_sectors=12):
             k[i] = c
             ws_mean = np.mean(ws_bin)
             TI[i] = 1/ws_mean + 0.04
+            weibull_fit = scipy.stats.weibull_min(c, loc=0, scale=scale)
         else:
             A[i] = np.nan
             k[i] = np.nan
             TI[i] = 0.1
+            weibull_fit = None
             print(f'Warning: No wind data in sector {i} ({wd_bins[i]}-{wd_bins[i+1]} deg); setting TI to 0.1')
+        weibull_fits.append(weibull_fit)
     print('TI per sector:', TI)
-    return freq, A, k, wd_centers, TI
+    return freq, A, k, wd_centers, TI, weibull_fits
 
 def create_weibull_site(freq, A, k, wd_centers,TI):
     """

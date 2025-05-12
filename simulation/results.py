@@ -158,4 +158,110 @@ def plot_wind_speed_histogram(site, n_bins=20, n_samples=10000):
     plt.ylabel('Probability density')
     plt.title('Wind Speed Distribution (Histogram)')
     plt.tight_layout()
-    plt.show() 
+    plt.show()
+
+def plot_production_profiles(sim_res_df):
+    """
+    Plot yearly, seasonal, and diurnal production profiles from a DataFrame with 'Power' and 'datetime' columns.
+    Args:
+        sim_res_df: DataFrame with at least 'Power' and 'datetime' columns (hourly data, multiple years)
+    """
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import numpy as np
+
+    # Ensure datetime is a pandas datetime
+    if not np.issubdtype(sim_res_df['datetime'].dtype, np.datetime64):
+        sim_res_df['datetime'] = pd.to_datetime(sim_res_df['datetime'])
+
+    # Add year and month columns to avoid duplicate column names
+    sim_res_df['year'] = sim_res_df['datetime'].dt.year
+    sim_res_df['month'] = sim_res_df['datetime'].dt.month
+
+    # Yearly production (sum per year)
+    all_years = np.arange(2014, 2025)  # 2014 to 2024 inclusive
+    yearly = sim_res_df.groupby('year')['Power'].sum().reindex(all_years, fill_value=0)
+
+    # Seasonal profile (mean monthly sum over all years)
+    monthly = sim_res_df.groupby(['year', 'month'])['Power'].sum().reset_index()
+    monthly_avg = monthly.groupby('month')['Power'].mean()
+
+    # Diurnal profile (mean hourly sum over all years)
+    sim_res_df['hour'] = sim_res_df['datetime'].dt.hour
+    diurnal = sim_res_df.groupby(['hour'])['Power'].mean()
+
+    # Font sizes (increased by 30%)
+    base_title = 18
+    base_label = 16
+    base_tick = 14
+    title_size = int(base_title * 1.3)  # 23
+    label_size = int(base_label * 1.3)  # 20
+    tick_size = int(base_tick * 1.3)    # 18
+
+    # Plotting
+    fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=False)
+    font = {'size': label_size}
+    plt.rc('font', **font)
+
+    # Yearly
+    axs[0].bar(yearly.index, yearly.values/1e6, color='steelblue')
+    axs[0].set_title('Yearly Production', fontsize=title_size)
+    axs[0].set_ylabel('Energy (GWh)', fontsize=label_size)
+    axs[0].set_xlabel('Year', fontsize=label_size)
+    axs[0].set_xticks(all_years)
+    axs[0].set_xticklabels(all_years, rotation=45, fontsize=tick_size)
+    axs[0].tick_params(axis='both', labelsize=tick_size)
+
+    # Seasonal
+    axs[1].plot(range(1, 13), monthly_avg.values/1e6, marker='o', color='darkorange')
+    axs[1].set_title('Seasonal Profile (Monthly Average)', fontsize=title_size)
+    axs[1].set_ylabel('Energy (GWh)', fontsize=label_size)
+    axs[1].set_xlabel('Month', fontsize=label_size)
+    axs[1].set_xticks(range(1, 13))
+    axs[1].set_xticklabels(range(1, 13), fontsize=tick_size)
+    axs[1].tick_params(axis='both', labelsize=tick_size)
+
+    # Diurnal
+    axs[2].plot(diurnal.index, diurnal.values, marker='o', color='forestgreen')
+    axs[2].set_title('Diurnal Profile (Hourly Average)', fontsize=title_size)
+    axs[2].set_ylabel('Power (W)', fontsize=label_size)
+    axs[2].set_xlabel('Hour of Day', fontsize=label_size)
+    axs[2].set_xticks(range(0, 24))
+    axs[2].set_xticklabels(range(0, 24), fontsize=tick_size)
+    axs[2].tick_params(axis='both', labelsize=tick_size)
+
+    plt.tight_layout()
+    #plt.show() 
+    return yearly, monthly_avg, diurnal
+
+def plot_turbine_production(sim_res, sim_res_wake, n_years=1):
+    """
+    Plot a stacked bar chart of yearly average production per turbine:
+    - Lower bar: production with wake loss (MWh/yr)
+    - Upper bar: difference (no wake - with wake) (MWh/yr)
+    Args:
+        sim_res: SimulationResult without wake loss (NoWakeDeficit)
+        sim_res_wake: SimulationResult with wake loss (e.g., BastankhahGaussianDeficit)
+        n_years: Number of years in the simulation (for averaging)
+    """
+    # Total energy per turbine (Wh)
+    energy_no_wake = np.sum(sim_res.Power.values, axis=1) / n_years
+    energy_with_wake = np.sum(sim_res_wake.Power.values, axis=1) / n_years
+    # Convert to MWh
+    energy_no_wake_MWh = energy_no_wake / 1e6
+    energy_with_wake_MWh = energy_with_wake / 1e6
+    # Difference (wake loss)
+    wake_loss_MWh = energy_no_wake_MWh - energy_with_wake_MWh
+    n_turbines = len(energy_no_wake_MWh)
+    x = np.arange(n_turbines)
+    plt.figure(figsize=(12, 6))
+    plt.bar(x, energy_with_wake_MWh, label='With Wake Loss', color='tab:blue')
+    plt.bar(x, wake_loss_MWh, bottom=energy_with_wake_MWh, label='Wake Loss', color='tab:orange')
+    plt.xlabel('Turbine')
+    plt.ylabel('Yearly Average Production (MWh/yr)')
+    plt.title('Yearly Average Production per Turbine (Stacked: With Wake + Wake Loss)')
+    plt.xticks(x, [f'Turbine {i+1}' for i in x], rotation=45)
+    plt.legend()
+    #plt.tight_layout()
+    plt.show()
+    
