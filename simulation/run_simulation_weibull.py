@@ -12,7 +12,7 @@ import xarray as xr
 importlib.reload(turbine_galvian.create_turbine)
 importlib.reload(site_galvian.create_site)
 
-def main(start_year=2024, end_year=2024, n_sectors=12, include_leap_year=False):
+def main(start_year=2014, end_year=2024, n_sectors=12, include_leap_year=False):
     # 1. Create time series site from Vortex data
     time_site = create_site_from_vortex(
         "Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",
@@ -31,7 +31,7 @@ def main(start_year=2024, end_year=2024, n_sectors=12, include_leap_year=False):
     turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
 
     # 5. Load turbine layout
-    turbine_coords = pd.read_csv("Inputdata/turbine_layout.csv")
+    turbine_coords = pd.read_csv("Inputdata/turbine_layout_14.csv")
     x = turbine_coords["x_coord"].values
     y = turbine_coords["y_coord"].values
 

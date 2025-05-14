@@ -48,7 +48,8 @@ def create_site_from_vortex(file_path, start=None, end=None, include_leap_year=F
     time_idx = np.arange(len(df))
     ws = df["wind_speed"].values
     wd = df["wind_direction"].values
-    ti = [1/x+0.04 for x in ws]
+    # Turbulence model from IEC 61400-1 NTM sigma = I_ref(0.75*V_hub+b), b=5.6, I_ref=0.12
+    ti = [0.12*(0.75+5.6/x) for x in ws]
 
     # Create xarray Dataset for XRSite
     ds = xr.Dataset(
@@ -101,7 +102,7 @@ def create_wind_distribution(time_site, n_sectors=12):
             A[i] = scale
             k[i] = c
             ws_mean = np.mean(ws_bin)
-            TI[i] = 1/ws_mean + 0.04
+            TI[i] = 0.12*(0.75+5.6/ws_mean) #IEC 61400-1 NTM sigma = I_ref(0.75*V_hub+b), b=5.6
             weibull_fit = scipy.stats.weibull_min(c, loc=0, scale=scale)
         else:
             A[i] = np.nan

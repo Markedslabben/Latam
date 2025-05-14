@@ -45,7 +45,7 @@ def main(start_year=2024,end_year=2024):
     # Add 
     turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
     # Galvian layout
-    turbine_coords = pd.read_csv("Inputdata/turbine_layout.csv")
+    turbine_coords = pd.read_csv("Inputdata/turbine_layout_14.csv")
     x = turbine_coords["x_coord"].values
     y = turbine_coords["y_coord"].values
     
