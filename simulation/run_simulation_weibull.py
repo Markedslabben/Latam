@@ -31,7 +31,7 @@ def main(start_year=2024, end_year=2024, n_sectors=12, include_leap_year=False):
     turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
 
     # 5. Load turbine layout
-    turbine_coords = pd.read_csv("output/turbine_coordinates.csv")
+    turbine_coords = pd.read_csv("Inputdata/turbine_layout.csv")
     x = turbine_coords["x_coord"].values
     y = turbine_coords["y_coord"].values
 

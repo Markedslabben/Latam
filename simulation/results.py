@@ -234,7 +234,7 @@ def plot_production_profiles(sim_res_df):
     #plt.show() 
     return yearly, monthly_avg, diurnal
 
-def plot_turbine_production(sim_res, sim_res_wake, n_years=1):
+def plot_turbine_production(sim_res, sim_res_wake, n_years=11):
     """
     Plot a stacked bar chart of yearly average production per turbine:
     - Lower bar: production with wake loss (MWh/yr)
@@ -264,4 +264,89 @@ def plot_turbine_production(sim_res, sim_res_wake, n_years=1):
     plt.legend()
     #plt.tight_layout()
     plt.show()
+    
+
+def plot_all_profiles(sim_res_df):
+    """
+    Plot seasonal and diurnal profiles for wind production, PV production, and electricity prices.
+    Args:
+        sim_res_df: DataFrame with 'Power', 'PV_CF', 'price', and 'datetime' columns
+    """
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import numpy as np
+
+    # Ensure datetime is a pandas datetime
+    if not np.issubdtype(sim_res_df['datetime'].dtype, np.datetime64):
+        sim_res_df['datetime'] = pd.to_datetime(sim_res_df['datetime'])
+
+    # Add month and hour columns
+    sim_res_df['month'] = sim_res_df['datetime'].dt.month
+    sim_res_df['hour'] = sim_res_df['datetime'].dt.hour
+
+    # Seasonal profiles (mean monthly values over all years)
+    monthly_wind = sim_res_df.groupby('month')['Power'].mean() #so far so good
+    monthly_pv = sim_res_df.groupby('month')['PV_CF'].mean()
+    monthly_price = sim_res_df.groupby('month')['price'].mean()
+
+    # Diurnal profiles (mean hourly values over all years)
+    diurnal_wind = sim_res_df.groupby('hour')['Power'].mean()
+    diurnal_pv = sim_res_df.groupby('hour')['PV_CF'].mean()
+    diurnal_price = sim_res_df.groupby('hour')['price'].mean()
+
+    # Font sizes
+    base_title = 18
+    base_label = 16
+    base_tick = 14
+    title_size = int(base_title * 1.3)
+    label_size = int(base_label * 1.3)
+    tick_size = int(base_tick * 1.3)
+
+    # Plotting
+    fig, axs = plt.subplots(2, 1, figsize=(12, 10), sharex=False)
+    font = {'size': label_size}
+    plt.rc('font', **font)
+
+    # Seasonal profiles
+    ax1 = axs[0]
+    # Plot power data on left axis
+    ax1.plot(range(1, 13), monthly_wind.values/1e6, marker='o', color='steelblue', label='Wind Power')
+    ax1.plot(range(1, 13), monthly_pv.values/1e6, marker='s', color='darkorange', label='PV Power')
+    ax1.set_title('Seasonal Profiles (Monthly Average)', fontsize=title_size)
+    ax1.set_ylabel('Power (MW)', fontsize=label_size)
+    ax1.set_xlabel('Month', fontsize=label_size)
+    ax1.set_xticks(range(1, 13))
+    ax1.set_xticklabels(range(1, 13), fontsize=tick_size)
+    ax1.tick_params(axis='both', labelsize=tick_size)
+    ax1.legend(fontsize=label_size, loc='upper left')
+
+    # Create second y-axis for prices
+    #ax1_twin = ax1.twinx()
+    #ax1_twin.plot(range(1, 13), monthly_price.values, marker='^', color='forestgreen', label='Electricity Price')
+    #ax1_twin.set_ylabel('Price (USD/MWh)', fontsize=label_size, color='forestgreen')
+    #ax1_twin.tick_params(axis='y', labelcolor='forestgreen', labelsize=tick_size)
+    #ax1_twin.legend(fontsize=label_size, loc='upper right')
+
+    # Diurnal profiles
+    ax2 = axs[1]
+    # Plot power data on left axis
+    ax2.plot(diurnal_wind.index, diurnal_wind.values/1e6, marker='o', color='steelblue', label='Wind Power')
+    ax2.plot(diurnal_pv.index, diurnal_pv.values/1e6, marker='s', color='darkorange', label='PV Power')
+    ax2.set_title('Diurnal Profiles (Hourly Average)', fontsize=title_size)
+    ax2.set_ylabel('Power (MW)', fontsize=label_size)
+    ax2.set_xlabel('Hour of Day', fontsize=label_size)
+    ax2.set_xticks(range(0, 24))
+    ax2.set_xticklabels(range(0, 24), fontsize=tick_size)
+    ax2.tick_params(axis='both', labelsize=tick_size)
+    ax2.legend(fontsize=label_size, loc='upper left')
+
+    # Create second y-axis for prices
+    #ax2_twin = ax2.twinx()
+    #ax2_twin.plot(diurnal_price.index, diurnal_price.values, marker='^', color='forestgreen', label='Electricity Price')
+    #ax2_twin.set_ylabel('Price (USD/MWh)', fontsize=label_size, color='forestgreen')
+    #ax2_twin.tick_params(axis='y', labelcolor='forestgreen', labelsize=tick_size)
+    #ax2_twin.legend(fontsize=label_size, loc='upper right')
+
+    plt.tight_layout()
+    return monthly_wind, monthly_pv, monthly_price, diurnal_wind, diurnal_pv, diurnal_price
     

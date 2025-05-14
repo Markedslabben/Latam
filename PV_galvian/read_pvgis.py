@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 def read_pvgis(csv_path):
     """
@@ -18,6 +19,12 @@ def read_pvgis(csv_path):
     df = pd.read_csv(csv_path, skiprows=header_row)
     # Select only the 'time' and 'P' columns, and rename for clarity
     df = df[['time', 'P']].rename(columns={'P': 'power'})
+    # Only keep rows where 'time' matches the pattern YYYYMMDD:HHMM
+    mask = df['time'].astype(str).str.match(r'^\d{8}:\d{4}$', na=False)
+    # Only keep rows where 'power' is numeric (not NaN, not a string)
+    df['power'] = pd.to_numeric(df['power'], errors='coerce')
+    mask = mask & df['power'].notna()
+    df = df[mask].reset_index(drop=True)
     return df
 
 if __name__ == "__main__":
