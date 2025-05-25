@@ -8,6 +8,9 @@ def read_pvgis(csv_path):
         csv_path (str): Path to the PVGIS timeseries CSV file.
     Returns:
         pd.DataFrame: DataFrame with columns 'time' and 'power'.
+    
+    Note:
+        PVGIS input files ignore leap years (no Feb 29th; 8760 hours per year) and are probably in UTC+0 timezone.
     """
     # Find the header row (the one that starts with 'time')
     with open(csv_path, encoding='utf-8') as f:

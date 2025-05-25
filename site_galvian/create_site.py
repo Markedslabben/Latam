@@ -15,6 +15,9 @@ def create_site_from_vortex(file_path, start=None, end=None, include_leap_year=F
         include_leap_year (bool): If False (default), ignore Feb 29th data in leap years.
     Returns:
         XRSite: Configured XRSite object
+    
+    Note:
+        Vortex input files contain leap years (i.e., 8784 hours for leap years such as 2016, 2020, 2024).
     """
     # Read the data, skipping the first 4 header lines
     df = pd.read_csv(
@@ -131,31 +134,33 @@ def create_weibull_site(freq, A, k, wd_centers,TI):
                                                    'Weibull_k': ('wd', k), 'TI': ('wd',TI)},coords={'wd': wd_bins}))
     return weibull_site
 
-# def write_results_to_csv(results, output_file):
-#     """
-#     Write simulation results to a CSV file suitable for Excel pivot tables.
-#     Args:
-#         results (list of dict or pd.DataFrame): Simulation results with required columns.
-#         output_file (str): Path to the output CSV file.
-#     Columns:
-#         datetime| wind direction | wind speed | turbulence intensity | turbine no. | power |  WS_eff | TI_eff
-#         - datetime is formatted as dd.mm.yyyy HH:MM
-#     """
-#     # Convert to DataFrame if needed
-#     df = pd.DataFrame(results)
-#     # Format the datetime column
-#     df['datetime'] = pd.to_datetime(df['datetime']).dt.strftime('%d.%m.%Y %H:%M')
-#     # Ensure column order
-#     columns = [
-#         'datetime',
-#         'wind direction',
-#         'wind speed',
-#         'turbulence intensity',
-#         'turbine no.',
-#         'power',
-#         'WS_eff',
-#         'TI_eff'
-#     ]
-#     df = df[columns]
-#     # Write to CSV
-#     df.to_csv(output_file, index=False, sep=',')
+def read_electricity_price(file_path, include_leap_year=False, exchange_rate=59.45):
+    """
+    Read electricity price data from Excel file and convert to USD/MWh.
+    
+    Args:
+        file_path (str): Path to the Excel file containing price data
+        include_leap_year (bool): If False (default), remove February 29th data
+        exchange_rate (float): Exchange rate from RD$ to USD (default: 59.45)
+    
+    Returns:
+        pd.DataFrame: DataFrame with columns 'time' and 'price' in USD/MWh
+    """
+    # Read the Excel file
+    df = pd.read_excel(
+        file_path,
+        usecols=['Fecha datetime', 'Barra de Referencia Palamara 138 kV'])
+        
+    # Rename columns for clarity
+    df = df.rename(columns={"Fecha datetime": "datetime"})
+    df = df.rename(columns={"Barra de Referencia Palamara 138 kV": "price"})
+    df['datetime'] = pd.to_datetime(df['datetime']) # Convert datetime to datetime64
+    df=df[['datetime','price']] #Reorder columns
+    
+    # Remove February 29th if not including leap year
+    if not include_leap_year:
+        df = df[~((df['datetime'].dt.month == 2) & (df['datetime'].dt.day == 29))]
+    df = df.reset_index(drop=True)
+    df = df.dropna()
+    
+    return df 

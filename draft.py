@@ -1,18 +1,34 @@
-import geopandas as gpd
-import pandas as pd
+# List columns that are the same for all turbines at a given time
+# (except 'turbine' and 'Power')
+non_turbine_cols = [col for col in sim_res_df.columns if col not in ['turbine', 'Power']]
 
-# Read the shapefile
-shapefile_path = r'C:\Users\klaus\klauspython\Latam\Inputdata\GISdata\Turbine layout 14.shp'
-gdf = gpd.read_file(shapefile_path)
+# Group by datetime and aggregate
+result = (
+    sim_res_df
+    .groupby(non_turbine_cols, as_index=False)
+    .agg({'Power': 'sum'})
+)
 
-# Extract coordinates
-coords_df = pd.DataFrame({
-    'turbine_id': range(1, len(gdf) + 1),
-    'x_coord': gdf.geometry.x,
-    'y_coord': gdf.geometry.y
-})
-
-# Save to CSV
-output_csv = 'Inputdata/Turbine Layout 14.csv'
-coords_df.to_csv(output_csv, index=False)
-print(f"Exported to {output_csv}")
+# If you want to group only by 'datetime' and keep the first value of other columns:
+result = (
+    sim_res_df
+    .groupby('datetime', as_index=False)
+    .agg({
+        'Power': 'sum',
+        'price': 'first',
+        'PV_CF': 'first',
+        'time': 'first',
+        'CT': 'first',
+        'h': 'first',
+        'x': 'first',
+        'y': 'first',
+        'WD': 'first',
+        'TI': 'first',
+        'wd_bin_size': 'first',
+        'WS': 'first',
+        'P': 'first',
+        'datetime': 'first'
+        
+        # add other columns as needed
+    })
+)

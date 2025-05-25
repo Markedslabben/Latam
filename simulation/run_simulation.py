@@ -15,7 +15,7 @@ import calendar
 importlib.reload(turbine_galvian.create_turbine)
 importlib.reload(site_galvian.create_site)
 
-def main(start_year=2024,end_year=2024):
+def main(start_year=2014,end_year=2024):
     # Coordinates lat
     #Lat=19.71814 , Lon= -71.35602     
     
@@ -26,8 +26,8 @@ def main(start_year=2024,end_year=2024):
     
 
     # Read pvgis data
-    Installed_Capacity = 120e6 # Convert from W (PVgi) to 120 MWp installed capacity kWp solar
-    df_temp = read_pvgis("Inputdata/PVGIS timeseries.csv")
+    Installed_Capacity = 120e-6 # Convert from W (PVgi) to  MWp and then 120 installed capacity MWp solar
+    df_temp = read_pvgis("Inputdata/PVGIS timeseries.csv") # In W
     # Ensure 'power' column is numeric and drop non-numeric rows
     df_temp['power'] = pd.to_numeric(df_temp['power'], errors='coerce')
     df_temp = df_temp.dropna(subset=['power'])
