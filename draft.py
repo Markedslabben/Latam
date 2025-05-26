@@ -12,22 +12,19 @@ result = (
 # If you want to group only by 'datetime' and keep the first value of other columns:
 result = (
     sim_res_df
-    .groupby('datetime', as_index=False)
+    .groupby('datetime_x', as_index=False)
     .agg({
+        'time': 'first',
         'Power': 'sum',
         'price': 'first',
         'PV_CF': 'first',
-        'time': 'first',
+        'WS_eff': 'first',
+        'TI_eff': 'first',
         'CT': 'first',
-        'h': 'first',
-        'x': 'first',
-        'y': 'first',
         'WD': 'first',
         'TI': 'first',
-        'wd_bin_size': 'first',
-        'WS': 'first',
-        'P': 'first',
-        'datetime': 'first'
+        'WS': 'first'
+        
         
         # add other columns as needed
     })

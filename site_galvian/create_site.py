@@ -105,7 +105,13 @@ def create_wind_distribution(time_site, n_sectors=12):
             A[i] = scale
             k[i] = c
             ws_mean = np.mean(ws_bin)
-            TI[i] = 0.12*(0.75+5.6/ws_mean) #IEC 61400-1 NTM sigma = I_ref(0.75*V_hub+b), b=5.6
+            try:
+                if ws_mean <= 2:
+                    TI[i] = 0.1
+                else:
+                    TI[i] = 0.12*(0.75+5.6/ws_mean) #IEC 61400-1 NTM sigma = I_ref(0.75*V_hub+b), b=5.6
+            except Exception:
+                TI[i] = 0.1
             weibull_fit = scipy.stats.weibull_min(c, loc=0, scale=scale)
         else:
             A[i] = np.nan
