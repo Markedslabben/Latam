@@ -3,7 +3,8 @@ import xarray as xr
 from py_wake.site.xrsite import XRSite
 import numpy as np
 import scipy.stats
-
+import matplotlib.pyplot as plt
+c
 
 def create_site_from_vortex(file_path, start=None, end=None, include_leap_year=False):
     """
@@ -160,6 +161,7 @@ def read_electricity_price(file_path, include_leap_year=False, exchange_rate=59.
     # Rename columns for clarity
     df = df.rename(columns={"Fecha datetime": "datetime"})
     df = df.rename(columns={"Barra de Referencia Palamara 138 kV": "price"})
+    df.price = df.price*exchange_rate #convert to USD/MWh 
     df['datetime'] = pd.to_datetime(df['datetime']) # Convert datetime to datetime64
     df=df[['datetime','price']] #Reorder columns
     
@@ -170,3 +172,34 @@ def read_electricity_price(file_path, include_leap_year=False, exchange_rate=59.
     df = df.dropna()
     
     return df 
+
+def plot_wind_rose(freq, A, k, wd_centers, TI):
+    """
+    Plot a wind rose plot from frequency, Weibull parameters, and wind direction centers.
+    Args:
+        freq (np.ndarray): Frequency of each wind direction sector
+        A (np.ndarray): Weibull scale parameter for each sector
+        k (np.ndarray): Weibull shape parameter for each sector
+        wd_centers (np.ndarray): Center wind direction of each sector
+        TI (np.ndarray): Turbulence intensity for each sector
+    """
+    n_sectors = len(wd_centers)
+    sector_edges = np.linspace(0, 360, n_sectors+1)
+    width = 2 * np.pi / n_sectors
+
+    # Use sector_edges[:-1] for bar positions (start of each sector)
+    angles = np.deg2rad(sector_edges[:-1])
+    values = freq
+
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    bars = ax.bar(
+        angles, values, width=width, bottom=0.0, align='edge',
+        edgecolor='k', color=plt.cm.viridis(values/values.max() if values.max() else 0.5)
+    )
+    ax.set_theta_zero_location('N')
+    ax.set_theta_direction(-1)
+    ax.set_xticks(np.deg2rad(sector_edges[:-1]))
+    ax.set_xticklabels([f'{int(e)}°' for e in sector_edges[:-1]])
+
+    ax.set_title("Wind Rose")
+    plt.show() 

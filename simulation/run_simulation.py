@@ -2,7 +2,7 @@ import importlib
 import turbine_galvian.create_turbine 
 import site_galvian.create_site 
 from turbine_galvian.create_turbine import create_nordex_n164_turbine
-from site_galvian.create_site import create_site_from_vortex, read_electricity_price
+from site_galvian.create_site import create_site_from_vortex, read_electricity_price, create_wind_distribution, create_weibull_site
 from py_wake.wind_farm_models import PropagateDownwind
 from py_wake.deficit_models import NOJDeficit
 from py_wake.deficit_models import BastankhahGaussianDeficit
@@ -14,6 +14,7 @@ from PV_galvian.read_pvgis import read_pvgis
 import calendar
 importlib.reload(turbine_galvian.create_turbine)
 importlib.reload(site_galvian.create_site)
+import matplotlib.pyplot as plt
 
 def main(start_year=2014,end_year=2024):
     # Coordinates lat
@@ -47,7 +48,7 @@ def main(start_year=2014,end_year=2024):
     # Add 
     turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
     # Galvian layout
-    turbine_coords = pd.read_csv("Inputdata/turbine_layout_14.csv")
+    turbine_coords = pd.read_csv("Inputdata/turbine_layout_13.csv")
     x = turbine_coords["x_coord"].values
     y = turbine_coords["y_coord"].values
     
@@ -128,6 +129,11 @@ def main(start_year=2014,end_year=2024):
     tidskolonne = pd.DataFrame({'time': np.arange(n_timesteps), 'datetime': datetimes})
     sim_res_df = pd.merge(sim_res_df, tidskolonne, on='time', how='left')
     sim_res_df = sim_res_df[['datetime_x','time','Power','PV_CF','price','wt','WS_eff','TI_eff','CT','WD','TI','WS']]
+
+    n_turbines = sim_res_df['wt'].nunique() if 'wt' in sim_res_df.columns else (sim_res_df['turbine'].nunique() if 'turbine' in sim_res_df.columns else 1)
+
+    n_years = sim_res_df['datetime_x'].dt.year.nunique()
+
     return sim_res_df, time_site, sim_res    
     
     
@@ -135,4 +141,35 @@ def main(start_year=2014,end_year=2024):
 if __name__ == "__main__":
     main()
     sim_res_df, time_site, sim_res = main()
+    
+    n_years = sim_res_df['datetime_x'].dt.year.nunique()
+    n_turbines = sim_res_df['wt'].nunique() if 'wt' in sim_res_df.columns else (sim_res_df['turbine'].nunique() if 'turbine' in sim_res_df.columns else 1)
+    
+    # --- Wake map plotting for different wind directions and speeds ---
+    # Load turbine coordinates
+    turbine_coords = pd.read_csv("Inputdata/turbine_layout_13.csv")
+    x = turbine_coords["x_coord"].values
+    y = turbine_coords["y_coord"].values
+
+    # Load turbine model
+    turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
+
+    # Create wind distribution and WeibullSite
+    n_sectors = 12
+    time_site = create_site_from_vortex("Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt", start="2014-01-01 00:00", end="2024-12-31 23:59", include_leap_year=False)
+    freq, A, k, wd_centers, TI, weibull_fits = create_wind_distribution(time_site, n_sectors=n_sectors)
+    weibull_site = create_weibull_site(freq, A, k, wd_centers, TI)
+
+    # Set up wind farm model
+    wfm = PropagateDownwind(weibull_site, turbine, wake_deficitModel=BastankhahGaussianDeficit())
+
+    # List of (wind direction, wind speed) pairs to plot
+    wd_ws_list = [(90, 8), (180, 10), (270, 6)]  # Example: 90°/8m/s, 180°/10m/s, 270°/6m/s
+    for wd, ws in wd_ws_list:
+        sim_res = wfm(x, y, wd=wd, ws=ws)
+        flow_map = sim_res.flow_map()
+        plt.figure()
+        flow_map.plot_wake_map()
+        plt.title(f"Wake map: WD={wd}deg, WS={ws} m/s")
+        plt.show()
     
