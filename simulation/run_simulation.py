@@ -54,7 +54,7 @@ def main(start_year=2014,end_year=2024):
     
     # Choose time series or weibull based simulation
     # Use BastankhahGaussianDeficit for wakes and NoWakeDeficit for no wakes.  
-    wfm = PropagateDownwind(time_site, turbine, wake_deficitModel=BastankhahGaussianDeficit())
+    wfm = PropagateDownwind(time_site, turbine, wake_deficitModel=NoWakeDeficit())
     # Extract time, wind direction, and wind speed arrays from time_site dataset
     times = time_site.ds['time'].values
     wd = time_site.ds['wind_direction'].values
@@ -144,32 +144,65 @@ if __name__ == "__main__":
     
     n_years = sim_res_df['datetime_x'].dt.year.nunique()
     n_turbines = sim_res_df['wt'].nunique() if 'wt' in sim_res_df.columns else (sim_res_df['turbine'].nunique() if 'turbine' in sim_res_df.columns else 1)
-    
-    # --- Wake map plotting for different wind directions and speeds ---
-    # Load turbine coordinates
-    turbine_coords = pd.read_csv("Inputdata/turbine_layout_13.csv")
-    x = turbine_coords["x_coord"].values
-    y = turbine_coords["y_coord"].values
 
-    # Load turbine model
-    turbine = create_nordex_n164_turbine("Inputdata/Nordex N164.csv")
+def calculate_and_save_production_table(sim_res_df_nowake, sim_res_df_wake, output_csv_path):
+    import pandas as pd
+    import numpy as np
+    # --- PARAMETERS ---
+    allowed_sectors = [(60, 120), (240, 300)]
+    wake_loss_sectors = [(70, 120), (240, 300)]
+    rated_power_MW = 7
+    n_turbines = 13
+    n_years = sim_res_df_nowake['datetime_x'].dt.year.nunique()
 
-    # Create wind distribution and WeibullSite
-    n_sectors = 12
-    time_site = create_site_from_vortex("Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt", start="2014-01-01 00:00", end="2024-12-31 23:59", include_leap_year=False)
-    freq, A, k, wd_centers, TI, weibull_fits = create_wind_distribution(time_site, n_sectors=n_sectors)
-    weibull_site = create_weibull_site(freq, A, k, wd_centers, TI)
+    def sector_mask(df, sector_list, wd_col='WD'):
+        if wd_col not in df.columns:
+            wd_col = 'wind_direction'
+        mask = np.zeros(len(df), dtype=bool)
+        for s, e in sector_list:
+            if s < e:
+                mask |= (df[wd_col] >= s) & (df[wd_col] < e)
+            else:
+                mask |= (df[wd_col] >= s) | (df[wd_col] < e)
+        return mask
 
-    # Set up wind farm model
-    wfm = PropagateDownwind(weibull_site, turbine, wake_deficitModel=BastankhahGaussianDeficit())
+    # 1. Energy production with all losses (GWh/yr, sector management)
+    mask_allowed = sector_mask(sim_res_df_wake, allowed_sectors)
+    prod_allowed = sim_res_df_wake.loc[mask_allowed, 'Power'].sum() / 1e9 / n_years  # GWh/yr
 
-    # List of (wind direction, wind speed) pairs to plot
-    wd_ws_list = [(90, 8), (180, 10), (270, 6)]  # Example: 90°/8m/s, 180°/10m/s, 270°/6m/s
-    for wd, ws in wd_ws_list:
-        sim_res = wfm(x, y, wd=wd, ws=ws)
-        flow_map = sim_res.flow_map()
-        plt.figure()
-        flow_map.plot_wake_map()
-        plt.title(f"Wake map: WD={wd}deg, WS={ws} m/s")
-        plt.show()
-    
+    # 2. Full load hours (with all losses and sector management)
+    flh_allowed = prod_allowed * 1e3 / (n_turbines * rated_power_MW)  # MWh to kWh, then divide by installed MW
+
+    # 3. Capacity factor (%)
+    cf_allowed = prod_allowed * 1e6 / (n_turbines * rated_power_MW * 8760) * 100  # GWh to Wh
+
+    # 4. Wake loss % (in sectors 70-120 and 240-300)
+    mask_wake_loss = sector_mask(sim_res_df_wake, wake_loss_sectors)
+    prod_nowake_wake = sim_res_df_nowake.loc[mask_wake_loss, 'Power'].sum()
+    prod_wake_wake = sim_res_df_wake.loc[mask_wake_loss, 'Power'].sum()
+    wake_loss_percent = 100 * (prod_nowake_wake - prod_wake_wake) / prod_nowake_wake if prod_nowake_wake > 0 else np.nan
+
+    # 5. Sector management loss % (no sector management vs with sector management, both with wake)
+    total_prod_wake = sim_res_df_wake['Power'].sum() / n_years  # W*hr/yr
+    prod_allowed_wake = sim_res_df_wake.loc[mask_allowed, 'Power'].sum() / n_years
+    sector_mgmt_loss_percent = 100 * (total_prod_wake - prod_allowed_wake) / total_prod_wake if total_prod_wake > 0 else np.nan
+
+    # --- Make Table ---
+    table = pd.DataFrame({
+        "Metric": [
+            "Annual Production (GWh/yr, all losses, sector mgmt)",
+            "Full Load Hours (h/yr)",
+            "Capacity Factor (%)",
+            "Wake Loss (%) (sectors 70-120, 240-300)",
+            "Sector Mgmt Loss (%)"
+        ],
+        "Value": [
+            f"{prod_allowed:.2f}",
+            f"{flh_allowed:.0f}",
+            f"{cf_allowed:.2f}",
+            f"{wake_loss_percent:.2f}",
+            f"{sector_mgmt_loss_percent:.2f}"
+        ]
+    })
+    table.to_csv(output_csv_path, index=False)
+    print(f"Saved production summary table to {output_csv_path}")

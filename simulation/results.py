@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import gamma
 import windrose
+import matplotlib
 
 # Try to import windrose, fallback to matplotlib if not available
 try:
@@ -23,68 +24,111 @@ PALETTE = {
     'soft_red':    '#C0392B',  # Critical/warning
 }
 
+matplotlib.rcParams['font.family'] = 'DejaVu Sans'
+
 def plot_wind_rose_from_site(site, n_sectors=None):
     """
     Plot a wind rose from a PyWake Site object (e.g., XRSite or WeibullSite) using sector frequencies and color-coded by mean wind speed.
     Args:
-        site: PyWake Site object with .ds['wd'], .ds['Sector_frequency'], .ds['Weibull_A'], .ds['Weibull_k']
+        site: PyWake Site object with .ds['wd'] or .ds['wind_direction'], .ds['Sector_frequency'], .ds['Weibull_A'], .ds['Weibull_k']
         n_sectors: Optional, number of wind direction sectors to plot (default: use site sectors)
     """
-    wd = site.ds['wd'].values
-    freq = site.ds['Sector_frequency'].values
-    A = site.ds['Weibull_A'].values
-    k = site.ds['Weibull_k'].values
-
-    # Remove duplicate 360° if present
-    if wd[-1] == 360:
-        wd = wd[:-1]
-        freq = freq[:-1]
-        A = A[:-1]
-        k = k[:-1]
-
-    # If n_sectors is specified and different from site, re-bin
-    if n_sectors is not None and n_sectors != len(wd):
-        # Re-bin frequencies and mean_ws to new sectors
-        sector_edges = np.linspace(0, 360, n_sectors+1)
-        sector_centers = (sector_edges[:-1] + sector_edges[1:]) / 2
-        # Assign each original sector to new sector
-        inds = np.digitize(wd, sector_edges, right=False) - 1
-        inds[inds == n_sectors] = 0  # wrap 360 to 0
-        freq_new = np.zeros(n_sectors)
-        mean_ws_new = np.zeros(n_sectors)
-        for i in range(n_sectors):
-            mask = inds == i
-            if np.any(mask):
-                freq_new[i] = freq[mask].sum()
-                mean_ws_new[i] = np.average(A[mask] * gamma(1 + 1 / k[mask]), weights=freq[mask])
-            else:
-                freq_new[i] = 0
-                mean_ws_new[i] = 0
-        freq = freq_new
-        mean_ws = mean_ws_new
-        wd = sector_centers
+    # Support both 'wd' and 'wind_direction' as wind direction variable
+    if 'wd' in site.ds:
+        wd = site.ds['wd'].values
+        is_binned = True
+    elif 'wind_direction' in site.ds:
+        wd_ts = site.ds['wind_direction'].values  # time series
+        is_binned = False
     else:
-        n_sectors = len(wd)
-        sector_edges = np.linspace(0, 360, n_sectors+1)
+        raise KeyError("Site dataset must have 'wd' or 'wind_direction' as wind direction variable.")
+
+    # Support both sectorized and time series data for other variables
+    if 'Sector_frequency' in site.ds:
+        freq = site.ds['Sector_frequency'].values
+    else:
+        # For time series, estimate frequency by histogram
+        bins = n_sectors if n_sectors is not None else 12
+        freq, bin_edges = np.histogram(wd_ts, bins=np.linspace(0, 360, bins+1), density=True)
+        freq = freq / freq.sum()  # Normalize to sum to 1
+        wd = (bin_edges[:-1] + bin_edges[1:]) / 2
+        n_sectors = bins
+    if 'Weibull_A' in site.ds and 'Weibull_k' in site.ds:
+        A = site.ds['Weibull_A'].values
+        k = site.ds['Weibull_k'].values
+        # Remove duplicate 360° if present
+        if wd[-1] == 360:
+            wd = wd[:-1]
+            freq = freq[:-1]
+            A = A[:-1]
+            k = k[:-1]
         mean_ws = A * gamma(1 + 1 / k)
+    else:
+        # For time series, estimate mean wind speed per bin
+        bins = n_sectors if n_sectors is not None else 12
+        bin_edges = np.linspace(0, 360, bins+1)
+        mean_ws = np.zeros(bins)
+        for i in range(bins):
+            mask = (wd_ts >= bin_edges[i]) & (wd_ts < bin_edges[i+1])
+            if np.any(mask):
+                mean_ws[i] = np.mean(site.ds['wind_speed'].values[mask])
+            else:
+                mean_ws[i] = 0
+        wd = (bin_edges[:-1] + bin_edges[1:]) / 2
+        n_sectors = bins
 
     # Plot
     width = 2 * np.pi / n_sectors
-    angles = np.deg2rad(sector_edges[:-1])
+    angles = np.deg2rad(np.linspace(0, 360, n_sectors+1)[:-1])
+
+    # Normalize mean wind speed for colormap
+    norm = plt.Normalize(vmin=mean_ws.min(), vmax=mean_ws.max())
+    cmap = plt.cm.viridis
+    sector_colors = cmap(norm(mean_ws))
+
+    # Draw bars at 1-degree resolution
+    bar_edgecolor = 'none'  # or a subtle color if you want faint sector lines
+
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     bars = ax.bar(
         angles, freq, width=width, bottom=0.0, align='edge',
-        edgecolor='k', color=PALETTE['sky_blue']
+        edgecolor=bar_edgecolor, color=sector_colors, alpha=0.9
     )
+
     ax.set_theta_zero_location('N')
     ax.set_theta_direction(-1)
-    ax.set_title('Wind Rose (Weibull Sectors, colored by mean wind speed)')
-    sm = plt.cm.ScalarMappable(cmap=plt.cm.viridis, norm=plt.Normalize(vmin=mean_ws.min(), vmax=mean_ws.max()))
+    ax.set_title('Wind Rose (1-degree sectors, grid every 10°)')
+
+    # Set grid ON
+    ax.grid(True)
+
+    # Set theta (angular) grid lines and labels every 10 degrees
+    theta_ticks = np.arange(0, 360, 10)
+    ax.set_xticks(np.deg2rad(theta_ticks))
+    ax.set_xticklabels([f'{int(e)}\u00B0' for e in theta_ticks])
+
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     cbar = plt.colorbar(sm, ax=ax, orientation='vertical', pad=0.1, fraction=0.05, anchor=(1.0, 1.0))
     cbar.set_label('Mean wind speed (m/s)')
-    ax.set_xticks(np.deg2rad(sector_edges[:-1]))
-    ax.set_xticklabels([f'{int(e)}°' for e in sector_edges[:-1]])
+    # Set radial (r) grid lines every 0.1 fraction
+    r_ticks = np.arange(0, 1.01, 0.1)
+    ax.set_yticks(r_ticks)
+    ax.set_yticklabels([f'{rt:.1f}' for rt in r_ticks])
+    ax.set_ylabel('Frequency (fraction)')
+
+    # Set tight radial axis limits
+    ax.set_ylim(0, max(freq) * 1.05)
+
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(np.deg2rad(10)))
+
+    # If n_sectors is 360, turn grid lines off, but keep labels every 10 degrees
+    if n_sectors == 360:
+        ax.grid(False)
+        theta_ticks = np.arange(0, 360, 10)
+        ax.set_xticks(np.deg2rad(theta_ticks))
+        ax.set_xticklabels([f'{int(e)}\u00B0' for e in theta_ticks])
+    
     plt.show()
 
 def plot_wbl_site(site, ws_range=None):
@@ -231,7 +275,6 @@ def plot_production_profiles(sim_res_df):
     axs[0].set_ylabel('Energy (GWh)', fontsize=label_size)
     axs[0].set_xlabel('Year', fontsize=label_size)
     axs[0].set_xticks(all_years)
-    axs[0].set_xticklabels(all_years, rotation=45, fontsize=tick_size)
     axs[0].tick_params(axis='both', labelsize=tick_size)
 
     # Seasonal
@@ -240,7 +283,6 @@ def plot_production_profiles(sim_res_df):
     axs[1].set_ylabel('Energy (GWh/mo)', fontsize=label_size)
     axs[1].set_xlabel('Month', fontsize=label_size)
     axs[1].set_xticks(range(1, 13))
-    axs[1].set_xticklabels(range(1, 13), fontsize=tick_size)
     axs[1].tick_params(axis='both', labelsize=tick_size)
 
     # Diurnal
@@ -249,7 +291,6 @@ def plot_production_profiles(sim_res_df):
     axs[2].set_ylabel('Power (MW)', fontsize=label_size)
     axs[2].set_xlabel('Hour of Day', fontsize=label_size)
     axs[2].set_xticks(range(0, 24))
-    axs[2].set_xticklabels(range(0, 24), fontsize=tick_size)
     axs[2].tick_params(axis='both', labelsize=tick_size)
 
     plt.tight_layout()
@@ -396,7 +437,7 @@ def plot_all_profiles(sim_res_df):
     ax1.set_ylabel('Power (MW)', fontsize=label_size)
     ax1.set_xlabel('Month', fontsize=label_size)
     ax1.set_xticks(range(1, 13))
-    ax1.set_xticklabels(range(1, 13), fontsize=tick_size)
+    ax1.set_xticklabels([f'{int(e)}\u00B0' for e in range(1, 13)])
     ax1.tick_params(axis='both', labelsize=tick_size)
     ax1.legend(fontsize=label_size, loc='upper left')
 
@@ -416,7 +457,7 @@ def plot_all_profiles(sim_res_df):
     ax2.set_ylabel('Power (MW)', fontsize=label_size)
     ax2.set_xlabel('Hour of Day', fontsize=label_size)
     ax2.set_xticks(range(0, 24))
-    ax2.set_xticklabels(range(0, 24), fontsize=tick_size)
+    ax2.set_xticklabels([f'{int(e)}\u00B0' for e in range(0, 24)])
     ax2.tick_params(axis='both', labelsize=tick_size)
     ax2.legend(fontsize=label_size, loc='upper left')
 
@@ -481,7 +522,7 @@ def plot_energy_rose(sim_res, n_sectors=12):
     ax.set_theta_direction(-1)
     ax.set_title(f'Energy Rose (Average Power per Sector, MW, {n_sectors} sectors)')
     ax.set_xticks(np.deg2rad(sector_edges[:-1]))
-    ax.set_xticklabels([f'{int(e)}°' for e in sector_edges[:-1]])
+    ax.set_xticklabels([f'{int(e)}\u00B0' for e in sector_edges[:-1]])
     plt.show()
     
 
@@ -574,12 +615,12 @@ def production_loss_with_sector_management(sim_res_df, allowed_intervals):
     
 
 def plot_wake_maps(
-    turbine_coords_file,
-    turbine_file,
-    site_file,
-    wd_ws_list,
+    turbine_coords_file="Inputdata/turbine_layout_13.csv",
+    turbine_file="Inputdata/Nordex N164.csv",
+    site_file="Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",
     n_sectors=12,
-    planningarea_shp_path="Inputdata/GISdata/planningarea.shp"
+    planningarea_shp_path="Inputdata/GISdata/planningarea.shp",
+    wd_ws_list=[(60, 10), (1200, 10), (240, 6), (300,8)],
 ):
     """
     Plot wake maps for a wind farm for different wind directions and wind speeds.
@@ -635,4 +676,81 @@ def plot_wake_maps(
             )
         plt.title(f"Wake map: WD={wd}deg, WS={ws} m/s")
         plt.show()
+    
+
+def calculate_and_save_production_table(sim_res_df_nowake, sim_res_df_wake, output_csv_path, sectors=None):
+    """
+    Calculate and save a production summary table with annual production, full load hours, capacity factor, wake loss, and sector management loss.
+    Args:
+        sim_res_df_nowake: DataFrame, simulation results without wake loss
+        sim_res_df_wake: DataFrame, simulation results with wake loss
+        output_csv_path: str, path to save the CSV file
+        sectors: list, e.g. [s1, e1, s2, e2, ...], start and end of each sector to include (default: [60, 120, 240, 300])
+    Returns:
+        table: pd.DataFrame, the summary table
+    """
+    import pandas as pd
+    import numpy as np
+    # --- PARAMETERS ---
+    if sectors is None:
+        sectors = [60, 120, 240, 300]
+    # Convert flat list to list of tuples
+    allowed_sectors = [(sectors[i], sectors[i+1]) for i in range(0, len(sectors), 2)]
+    wake_loss_sectors = allowed_sectors
+    rated_power_MW = 7
+    n_turbines = 13
+    n_years = sim_res_df_nowake['datetime_x'].dt.year.nunique()
+
+    def sector_mask(df, sector_list, wd_col='WD'):
+        if wd_col not in df.columns:
+            wd_col = 'wind_direction'
+        mask = np.zeros(len(df), dtype=bool)
+        for s, e in sector_list:
+            if s < e:
+                mask |= (df[wd_col] >= s) & (df[wd_col] < e)
+            else:
+                mask |= (df[wd_col] >= s) | (df[wd_col] < e)
+        return mask
+
+    # 1. Energy production with all losses (GWh/yr, sector management)
+    mask_allowed = sector_mask(sim_res_df_wake, allowed_sectors)
+    prod_allowed = sim_res_df_wake.loc[mask_allowed, 'Power'].sum() / 1e9 / n_years  # GWh/yr
+
+    # 2. Full load hours (with all losses and sector management)
+    flh_allowed = prod_allowed * 1e3 / (n_turbines * rated_power_MW)  # MWh to kWh, then divide by installed MW
+
+    # 3. Capacity factor (%)
+    cf_allowed = prod_allowed / (n_turbines * rated_power_MW * 8.76) * 100  # GWh to percent
+
+    # 4. Wake loss % (in selected sectors)
+    mask_wake_loss = sector_mask(sim_res_df_wake, wake_loss_sectors)
+    prod_nowake_wake = sim_res_df_nowake.loc[mask_wake_loss, 'Power'].sum()
+    prod_wake_wake = sim_res_df_wake.loc[mask_wake_loss, 'Power'].sum()
+    wake_loss_percent = 100 * (prod_nowake_wake - prod_wake_wake) / prod_nowake_wake if prod_nowake_wake > 0 else np.nan
+
+    # 5. Sector management loss % (difference between all sectors and allowed sectors, both with wake)
+    total_prod_wake = sim_res_df_wake['Power'].sum() / 1e9 / n_years  # GWh/yr, all sectors
+    prod_allowed_wake = sim_res_df_wake.loc[mask_allowed, 'Power'].sum() / 1e9 / n_years  # GWh/yr, allowed sectors
+    sector_mgmt_loss_percent = 100 * (total_prod_wake - prod_allowed_wake) / total_prod_wake if total_prod_wake > 0 else np.nan
+
+    # --- Make Table ---
+    table = pd.DataFrame({
+        "Metric": [
+            f"Annual Production (GWh/yr, all losses, sectors {sectors})",
+            "Full Load Hours (h/yr)",
+            "Capacity Factor (%)",
+            f"Wake Loss (%) (sectors {sectors})",
+            "Sector Mgmt Loss (%)"
+        ],
+        "Value": [
+            f"{prod_allowed:.2f}",
+            f"{flh_allowed:.0f}",
+            f"{cf_allowed:.2f}",
+            f"{wake_loss_percent:.2f}",
+            f"{sector_mgmt_loss_percent:.2f}"
+        ]
+    })
+    table.to_csv(output_csv_path, index=False)
+    print(f"Saved production summary table to {output_csv_path}")
+    return table
     

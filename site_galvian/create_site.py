@@ -4,7 +4,7 @@ from py_wake.site.xrsite import XRSite
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
-c
+
 
 def create_site_from_vortex(file_path, start=None, end=None, include_leap_year=False):
     """
