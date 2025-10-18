@@ -1,59 +1,92 @@
-# Ignore everything by default
-*
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# But not these file types:
-!*.py
-!*.ipynb
-!*.txt
-!*.json
-!*.md
-!*.mdc
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# Allow directories (so you can add files inside them)
-!*/
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
 
-# Never ignore .gitignore itself
-!.gitignore
+# Editor/IDE configuration with secrets
+.cursor/
+.cursor/mcp.json
 
-# Explicitly ignore unwanted/binary/geodata/image/archive files
+# Data files - IGNORE
+*.csv
+*.xls
+*.xlsx
+*.txt.vortex
+*.txt.wind
+Inputdata/*.txt
+
+# Binary and media files - IGNORE
 *.pdf
 *.docx
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tif
+*.tiff
+
+# GIS/Geodata files - IGNORE
 *.shp
 *.shx
 *.dbf
 *.prj
 *.gpkg
-*.tif
-*.tiff
-*.jpg
-*.jpeg
-*.png
-*.csv
-*.xls
-*.xlsx
+
+# Archives - IGNORE
 *.zip
 *.tar
 *.gz
 *.rar
 
-# Ignore OS/editor/system files
+# OS/Editor files
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-__pycache__/
 node_modules/
-.env
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 dev-debug.log
 
-# Added by Claude Task Master
-# Task files
+# Task tracking
 tasks.json
-tasks/
+
+# But DO include these specific text files
+!requirements.txt
+!*.md
+!*.mdc
+!tasks/*.txt
+!docs/**/*.txt

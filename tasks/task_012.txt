@@ -1,0 +1,7 @@
+Task_description 12
+
+use pvlib to creat a function  that calculats the hourly PV production of 1 kWp solar PV at location lat,lon, az, tilt and a specified PV module.  
+I am not sure we need to provide inverter type.  I know pvlib has access to libraries for PV panels, and has functionality to use the API of PVGIS from which we will get the production estimat
+
+For testing, make sure that the resulta are reasonable, we expcect about 1800-1600  kWh/kWp as aresult, and we want hourly values from 2024-01-01 00:00 to 2024-12-31 23:59, but you should use the represenative year option for acquiring data from PVGIS. This means it is a representative year, and the 2024 irradiation data is anyhow not available
+theresults shoudl be in th form of a dataframe with first column time (column name ) and second column the kWh/kWp.  

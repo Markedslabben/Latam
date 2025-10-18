@@ -1,0 +1,141 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Setup Project Environment",
+      "description": "Set up the Python environment with required libraries including pvlib and pandas.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Create a virtual environment and install necessary packages: pvlib, pandas, numpy, and matplotlib (for optional visualization). Ensure pvlib is properly configured to access PVGIS API. Verify that all dependencies are correctly installed and accessible.",
+      "testStrategy": "Verify successful import of all required libraries. Test basic pvlib functionality by retrieving sample data from PVGIS API."
+    },
+    {
+      "id": 2,
+      "title": "Define Function Parameters and Structure",
+      "description": "Create the function signature and define all required input parameters for PV production calculation.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Create a function named 'calculate_pv_production' that accepts parameters: latitude, longitude, azimuth, tilt, and PV module type. Include optional parameters for time period (defaulting to full year 2024). Document each parameter with appropriate type hints and docstrings.",
+      "testStrategy": "Verify function accepts all parameters correctly. Test with sample inputs to ensure parameters are properly processed."
+    },
+    {
+      "id": 3,
+      "title": "Implement PVGIS API Connection",
+      "description": "Set up the connection to PVGIS API using pvlib to retrieve representative year data.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "Use pvlib's PVGIS functions to establish connection to the API. Configure the API request to use the 'representative year' option rather than specific historical data. Handle potential API connection errors and implement appropriate retry logic.",
+      "testStrategy": "Test API connection with sample coordinates. Verify that representative year data is being retrieved correctly. Check error handling by simulating connection failures."
+    },
+    {
+      "id": 4,
+      "title": "Retrieve Solar Irradiance Data",
+      "description": "Fetch hourly irradiance data for the specified location using the PVGIS API.",
+      "status": "pending",
+      "dependencies": [
+        3
+      ],
+      "priority": "high",
+      "details": "Use pvlib's get_pvgis_hourly function to retrieve hourly irradiance data (GHI, DNI, DHI) for the specified location. Ensure the data covers the entire representative year. Process the API response to extract relevant irradiance parameters.",
+      "testStrategy": "Verify data completeness (8760 hourly values for a full year). Check that irradiance values are within reasonable ranges. Validate data structure matches expectations."
+    },
+    {
+      "id": 5,
+      "title": "Implement PV Module Selection",
+      "description": "Add functionality to select and configure PV module parameters from pvlib's module database.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "medium",
+      "details": "Access pvlib's CEC module database to retrieve parameters for the specified PV module type. If a specific module isn't provided, use a default high-quality module. Extract relevant module parameters such as efficiency, temperature coefficients, etc.",
+      "testStrategy": "Test with various module types to ensure correct parameter retrieval. Verify handling of invalid module types with appropriate error messages."
+    },
+    {
+      "id": 6,
+      "title": "Calculate Solar Position",
+      "description": "Calculate solar position for each hour of the year based on location.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "medium",
+      "details": "Use pvlib's solar_position module to calculate solar zenith, azimuth, and other position parameters for each hour in the dataset. Create a time series for the entire representative year with hourly intervals.",
+      "testStrategy": "Verify solar position calculations against known values for specific dates/times. Check for completeness of the time series data."
+    },
+    {
+      "id": 7,
+      "title": "Calculate Plane of Array Irradiance",
+      "description": "Transform irradiance data to the plane of array based on tilt and azimuth inputs.",
+      "status": "pending",
+      "dependencies": [
+        4,
+        6
+      ],
+      "priority": "high",
+      "details": "Use pvlib's irradiance module to translate the GHI, DNI, and DHI values to the plane of array (POA) based on the specified tilt and azimuth angles. Account for ground reflectance using a typical albedo value.",
+      "testStrategy": "Compare POA irradiance with GHI values to ensure they follow expected patterns (POA should be higher than GHI for optimally oriented surfaces in the respective hemisphere)."
+    },
+    {
+      "id": 8,
+      "title": "Calculate PV Cell Temperature",
+      "description": "Model PV cell temperature based on irradiance, ambient temperature, and module characteristics.",
+      "status": "pending",
+      "dependencies": [
+        5,
+        7
+      ],
+      "priority": "medium",
+      "details": "Use pvlib's temperature model (e.g., SAPM or other appropriate model) to calculate cell temperature for each hour based on irradiance, ambient temperature from the weather data, and module characteristics. Consider wind speed effects if available in the data.",
+      "testStrategy": "Verify temperature calculations follow expected patterns (higher during high irradiance, lower at night). Check for reasonable temperature ranges based on climate at the specified location."
+    },
+    {
+      "id": 9,
+      "title": "Calculate Hourly PV Production",
+      "description": "Calculate the hourly electricity production for 1 kWp of installed capacity.",
+      "status": "pending",
+      "dependencies": [
+        7,
+        8
+      ],
+      "priority": "high",
+      "details": "Use pvlib's PV system performance model to calculate DC power output based on POA irradiance, cell temperature, and module parameters. Convert to AC power using a simple efficiency factor if inverter details aren't specified. Scale results to represent exactly 1 kWp of installed capacity. Convert power (kW) to energy (kWh) for hourly intervals.",
+      "testStrategy": "Verify that daily and annual production totals fall within the expected range (1600-1800 kWh/kWp annually). Check for reasonable diurnal and seasonal patterns in the output data."
+    },
+    {
+      "id": 10,
+      "title": "Format and Return Results",
+      "description": "Format the calculated PV production data into the required DataFrame structure.",
+      "status": "pending",
+      "dependencies": [
+        9
+      ],
+      "priority": "medium",
+      "details": "Create a pandas DataFrame with two columns: 'time' and 'kWh/kWp'. Ensure the time column covers the period from 2024-01-01 00:00 to 2024-12-31 23:59 with hourly resolution. Format the time column as a datetime object. Verify the total annual production falls within the expected range of 1600-1800 kWh/kWp.",
+      "testStrategy": "Verify DataFrame structure matches requirements. Check for missing values or gaps in the time series. Validate that annual sum is within the expected range. Test the function with various locations to ensure results vary appropriately with geography."
+    },
+    {
+      "id": 11,
+      "title": "Develop Hourly PV Production Calculator Function Using pvlib and PVGIS",
+      "description": "Create a function that calculates hourly photovoltaic production for a 1 kWp solar PV system at a specified location using pvlib and PVGIS data, returning a DataFrame with time and production values.",
+      "details": "Implement a Python function that calculates the hourly electricity production of a 1 kWp solar PV system based on location parameters (latitude, longitude), system configuration (azimuth, tilt), and PV module specifications. The function should:\n\n1. Accept input parameters: latitude, longitude, azimuth, tilt, and PV module type\n2. Connect to the PVGIS API to retrieve TMY (Typical Meteorological Year) data for the specified location\n3. Process the retrieved data to extract relevant solar irradiance and temperature information\n4. Allow selection from common PV module types or custom module parameters\n5. Calculate solar position for each hour using pvlib's solar position algorithms\n6. Determine plane-of-array irradiance based on the system orientation\n7. Model PV cell temperature based on ambient conditions and module characteristics\n8. Calculate DC and AC power production for each hour accounting for all relevant losses\n9. Convert power to energy (kWh) and normalize to per kWp\n10. Return a well-structured DataFrame with datetime index and hourly production values\n\nThe implementation should target an annual production of 1600-1800 kWh/kWp for typical European locations with optimal orientation. The code should handle error cases gracefully, including API connection failures, invalid location parameters, and edge cases in calculations.",
+      "testStrategy": "Testing should verify both the functionality and accuracy of the PV production calculator:\n\n1. Unit tests:\n   - Test with known locations and compare results to expected ranges\n   - Verify correct handling of edge cases (extreme latitudes, night hours, etc.)\n   - Test error handling with invalid inputs (out-of-range coordinates, invalid module types)\n\n2. Integration tests:\n   - Compare results against PVGIS web calculator output for the same parameters\n   - Verify API connection and data retrieval works correctly\n   - Test with different module types and system configurations\n\n3. Validation tests:\n   - Verify annual production falls within 1600-1800 kWh/kWp for optimal configurations in European locations\n   - Check seasonal patterns match expected solar resource distribution\n   - Validate hourly profiles against typical production curves\n\n4. Performance tests:\n   - Measure execution time for multiple location calculations\n   - Test caching mechanisms if implemented\n\nCreate a test suite with at least 5 reference locations across different climate zones and compare results with PVGIS web interface outputs. Maximum acceptable deviation should be ±5% for annual totals and ±10% for monthly totals.",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high"
+    }
+  ],
+  "metadata": {
+    "projectName": "PV Production Calculator Implementation",
+    "totalTasks": 10,
+    "sourceFile": "task_012.txt",
+    "generatedAt": "2023-11-14"
+  }
+}

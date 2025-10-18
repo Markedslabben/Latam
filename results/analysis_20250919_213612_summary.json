@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "analysis_started": "2025-09-19T21:36:01.548196",
+    "config_summary": "\nAnalysis Configuration Summary:\n==============================\nSite: 19.71814\u00b0N, -71.35602\u00b0W\nWind Analysis: 2014-2024\nSolar Capacity: 120.0 MW\nWind Turbines: Nordex N164\nWake Model: BastankhahGaussianDeficit\nOutput Directory: results\n",
+    "wind_analysis_complete": true,
+    "results_combined": true
+  },
+  "configuration": {
+    "site": "SiteConfig(latitude=19.71814, longitude=-71.35602, altitude=300.0, timezone='UTC-4', default_turbulence_intensity=0.1)",
+    "wind": "WindConfig(turbine_csv_path='Inputdata/Nordex N164.csv', turbine_name='Nordex N164', turbine_diameter=164.0, hub_height=163.0, vortex_data_path='Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt', layout_csv_path='Inputdata/turbine_layout_13.csv', start_year=2014, end_year=2024, include_leap_year=False, wake_model='BastankhahGaussianDeficit', n_sectors=16, allowed_sectors=[(60, 120), (240, 300)], wake_loss_sectors=[(60, 120), (240, 300)], rated_power_MW=7.0)",
+    "solar": "SolarConfig(pvgis_csv_path='Inputdata/PVGIS timeseries.csv', installed_capacity_MW=120.0, module_type='LONGi_LR5_72HPH_540M', azimuth=180.0, tilt=20.0, albedo=0.2, time_shift_hours=-4, time_offset_minutes=30)",
+    "economic": "EconomicConfig(price_excel_path='Inputdata/20250505 Spotmarket Prices_2024.xlsx', exchange_rate=59.45, include_leap_year=False)"
+  },
+  "wind_analysis": {
+    "metadata": {
+      "turbine_loaded": true,
+      "turbine_path": "Inputdata/Nordex N164.csv",
+      "turbine_name": "Nordex N164",
+      "site_created": true,
+      "vortex_path": "Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt",
+      "time_period": [
+        "2014-01-01 00:00",
+        "2024-12-31 23:59"
+      ],
+      "layout_loaded": true,
+      "layout_path": "Inputdata/turbine_layout_13.csv",
+      "n_turbines": 13,
+      "wind_farm_model_setup": true,
+      "wake_model": "BastankhahGaussianDeficit",
+      "simulation_complete": true,
+      "n_timesteps": 96360,
+      "results_processed": true
+    },
+    "config": {
+      "wind_config": "WindConfig(turbine_csv_path='Inputdata/Nordex N164.csv', turbine_name='Nordex N164', turbine_diameter=164.0, hub_height=163.0, vortex_data_path='Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt', layout_csv_path='Inputdata/turbine_layout_13.csv', start_year=2014, end_year=2024, include_leap_year=False, wake_model='BastankhahGaussianDeficit', n_sectors=16, allowed_sectors=[(60, 120), (240, 300)], wake_loss_sectors=[(60, 120), (240, 300)], rated_power_MW=7.0)",
+      "site_config": "SiteConfig(latitude=19.71814, longitude=-71.35602, altitude=300.0, timezone='UTC-4', default_turbulence_intensity=0.1)"
+    },
+    "results_summary": {
+      "annual_energy_GWh": 290.91133956004654,
+      "total_energy_GWh": 3200.024735160512,
+      "capacity_factor": 0.4257571413769561,
+      "n_turbines": 13,
+      "n_timesteps": 96360,
+      "turbine_rated_power_MW": 6.0,
+      "total_rated_capacity_MW": 78.0
+    }
+  },
+  "solar_analysis": {
+    "metadata": {
+      "pvgis_loaded": true,
+      "pvgis_path": "Inputdata/PVGIS timeseries.csv",
+      "installed_capacity_MW": 120.0,
+      "n_timesteps": 8760,
+      "results_processed": true
+    },
+    "config": {
+      "solar_config": "SolarConfig(pvgis_csv_path='Inputdata/PVGIS timeseries.csv', installed_capacity_MW=120.0, module_type='LONGi_LR5_72HPH_540M', azimuth=180.0, tilt=20.0, albedo=0.2, time_shift_hours=-4, time_offset_minutes=30)",
+      "site_config": "SiteConfig(latitude=19.71814, longitude=-71.35602, altitude=300.0, timezone='UTC-4', default_turbulence_intensity=0.1)",
+      "shading_config": "ShadingConfig(tower_height=164.0, tower_diameter_base=6.0, tower_diameter_top=3.0, tower_location=(0.0, 0.0), analysis_distances=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150], analysis_azimuths=[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360])"
+    },
+    "results_summary": {
+      "annual_energy_MWh": 0.18335426040000002,
+      "capacity_factor_pct": 1.7442376369863017e-05,
+      "installed_capacity_MW": 120.0
+    }
+  },
+  "combined_results": {
+    "summary": {
+      "wind": {
+        "annual_energy_GWh": 290.91133956004654,
+        "total_energy_GWh": 3200.024735160512,
+        "capacity_factor": 0.4257571413769561,
+        "n_turbines": 13,
+        "n_timesteps": 96360,
+        "turbine_rated_power_MW": 6.0,
+        "total_rated_capacity_MW": 78.0
+      },
+      "solar": {
+        "annual_energy_MWh": 0.18335426040000002,
+        "capacity_factor_pct": 1.7442376369863017e-05,
+        "installed_capacity_MW": 120.0
+      }
+    },
+    "timeseries": {},
+    "totals": {
+      "wind_annual_GWh": 290.91133956004654,
+      "solar_annual_GWh": 0.00018335426040000003,
+      "total_annual_GWh": 290.91152291430694,
+      "wind_capacity_MW": 91.0,
+      "solar_capacity_MW": 120.0,
+      "total_capacity_MW": 211.0,
+      "combined_capacity_factor_pct": 15.73889950628162
+    }
+  },
+  "economic_results": {}
+}

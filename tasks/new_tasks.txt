@@ -1,0 +1,19 @@
+Additional tasks is as follows:  
+
+1. the turbine shading for the pvgis that only includes the turbine tower has been expanded in later attempts to include also 
+rotor flicker area. By includin the shading from the whole rotor swpt area, it would then be possible to account for all of the shading
+
+
+2. I have now the results sim_res_df and result which is wind turbine aggregated results for all hours over 11 years.  I want to calculate the 
+revenues from wind and solar respectively, and calculate each of those sources volume weighted prices defined as : 
+ (price(t) x production_wind_power(t))/production(t) at time t for summed over all hours of the year.  Same procedure for solar pv
+These volume weighted prices should indicate whether wind and solar has favorable production profiles
+
+3. there is a requirement of 50% of PV installed capacity of battery storage, which can last 4 hours. 
+   Now for a realistic assessment of its value, then we should make a simulation of optimized use of the battery storage as follows: 
+
+   For a given known price of electricity t, t = 1..8760 , and known production of solar pv at time t
+dispatch of batteries. It is not possible to import from the grid, we  can only store from the PV and discharge to the grid.  
+Det er allerede laget et forsal i pv_battery_lp.py  - filen 
+
+

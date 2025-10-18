@@ -1,0 +1,16 @@
+# Task ID: 5
+# Title: Review and Enhance pv_battery_lp.py
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Review the existing battery dispatch optimization code and ensure it meets the requirements for the battery storage simulation.
+# Details:
+1. Review the existing pv_battery_lp.py implementation
+2. Verify it correctly handles the constraint that batteries can only store energy from PV (not grid)
+3. Check that it properly models 4-hour duration batteries
+4. Ensure the optimization objective is correctly defined (likely maximizing revenue)
+5. Validate the mathematical formulation of the linear program
+6. Document the model's assumptions and limitations
+
+# Test Strategy:
+Run the model with simplified test cases where the optimal solution can be manually verified. Check boundary conditions and extreme scenarios.

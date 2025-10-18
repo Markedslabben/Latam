@@ -1,0 +1,16 @@
+# Task ID: 4
+# Title: Compare Wind and Solar Production Profiles
+# Status: pending
+# Dependencies: 2, 3
+# Priority: medium
+# Description: Analyze and compare the volume-weighted prices of wind and solar to determine which has more favorable production profiles.
+# Details:
+1. Create a comparative analysis framework for the volume-weighted prices
+2. Calculate the difference between volume-weighted prices and average market prices for both sources
+3. Identify periods where each source performs better relative to market prices
+4. Generate statistical measures (mean, median, variance) for both sources
+5. Implement visualization tools to illustrate the differences
+6. Document findings regarding which source has more favorable production timing
+
+# Test Strategy:
+Verify that comparisons are statistically sound. Use sensitivity analysis to ensure conclusions are robust across different time periods.
