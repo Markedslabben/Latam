@@ -1,8 +1,15 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
+import os
 
-# 1. Load the data
-file_path = r"C:\Users\klaus\klauspython\Latam\Inputdata\vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt"
+# Add parent directory to path to import latam_hybrid
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from latam_hybrid.core import get_wind_data_file
+
+# 1. Load the data using path helper
+file_path = get_wind_data_file("vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt")
 df = pd.read_csv(
     file_path,
     sep=r"\s+",

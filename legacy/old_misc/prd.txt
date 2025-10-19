@@ -1,0 +1,77 @@
+Project: Latam Hybrid Wind-Solar Power Plant
+Description: Development of a hybrid power generation facility combining wind and solar power with potential battery storage system (BESS) integration.
+
+Project Overview:
+- Total Wind Capacity: 50 MW (Expected generation: 180 GWh/year)
+- Total Solar Capacity: 132 MW (Expected generation: 200 GWh/year)
+- Location: Dominican Republic (to be confirmed)
+- Grid Integration: Subject to limitations (requires assessment)
+
+Key Requirements:
+
+1. Wind Power Development
+   - Acquire and analyze high-resolution terrain data using QGIS and Rhino
+   - Obtain and process wind data:
+     * ERA5 hourly data (31km resolution, 100m hub height)
+     * Vortex Mast service data (100m resolution)
+   - Validate wind statistics against Global Wind Atlas
+   - Optimize turbine layout considering:
+     * Site boundaries
+     * Inter-turbine spacing
+     * Wake effects using NREL toolbox or parkoptimizer
+   - Select and implement Nordex 6.x wind turbines
+   - Design crane pads (27.5m x 40m) and access infrastructure
+
+2. Solar PV Integration
+   - Perform GIS-based analysis for viable PV zones
+   - Account for wind turbine shadow effects:
+     * Tower shadows
+     * Rotor sweep area impacts
+   - Optimize PV block layout
+   - Design access roads and infrastructure
+
+3. Production Analysis
+   - Generate hourly production estimates:
+     * Wind power P50 including wake losses
+     * Solar PV generation
+   - Analyze hourly price data
+   - Calculate revenue projections
+   - Consider turbine self-consumption (1-1.5%)
+
+4. Electrical Infrastructure
+   - Design 690V/22kV substations for turbines
+   - Plan main substation layout
+   - Assess grid connection limitations
+   - Evaluate BESS integration:
+     * Size optimization
+     * Charge/discharge constraints
+     * Cost-benefit analysis
+
+5. System Integration
+   - Create comprehensive site layout
+   - Optimize hybrid system operation
+   - Design control and monitoring systems
+   - Ensure compliance with grid requirements
+
+Technical Constraints:
+- Grid capacity limitations must be assessed
+- Wind turbine wake effects on adjacent units
+- Solar PV shading from wind turbines
+- Site boundary restrictions
+- Access requirements for construction and maintenance
+
+Success Criteria:
+1. Achieve target annual generation:
+   - Wind: 180 GWh/year
+   - Solar: 200 GWh/year
+2. Optimize layout for maximum energy yield
+3. Meet grid integration requirements
+4. Minimize interference between wind and solar components
+5. Ensure economic viability through efficient design
+
+Deliverables:
+1. Detailed site layout and resource maps
+2. Production estimates and revenue projections
+3. Infrastructure and connection designs
+4. Technical specifications and requirements
+5. Implementation and construction guidelines 

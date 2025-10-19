@@ -1,9 +1,15 @@
 import pandas as pd
 import sys
+import os
+
+# Add parent directory to path to import latam_hybrid
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from latam_hybrid.core import get_solar_data_file
 
 try:
-    # Read the PVGIS timeseries file
-    file_path = "Inputdata/PVGIS timeseries.csv"
+    # Read the PVGIS timeseries file using path helper
+    file_path = get_solar_data_file()
     print(f"Reading file: {file_path}")
     
     # Read the file, skipping metadata rows

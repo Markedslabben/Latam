@@ -1,9 +1,15 @@
 import pandas as pd
 import sys
+import os
+
+# Add parent directory to path to import latam_hybrid
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from latam_hybrid.core import get_wind_data_file
 
 try:
-    # Read the Vortex data file
-    file_path = "Inputdata/vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt"
+    # Read the Vortex data file using path helper
+    file_path = get_wind_data_file("vortex.serie.850689.10y 164m UTC-04.0 ERA5.txt")
     print(f"Reading file: {file_path}")
     
     df = pd.read_csv(
