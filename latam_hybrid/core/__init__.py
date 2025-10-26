@@ -18,6 +18,7 @@ from .data_models import (
     # Configuration models
     TurbineSpec,
     LayoutData,
+    SectorManagementConfig,
     # Result models
     WindSimulationResult,
     SolarProductionResult,
@@ -69,6 +70,7 @@ __all__ = [
     'MarketData',
     'TurbineSpec',
     'LayoutData',
+    'SectorManagementConfig',
     'WindSimulationResult',
     'SolarProductionResult',
     'EconomicResult',

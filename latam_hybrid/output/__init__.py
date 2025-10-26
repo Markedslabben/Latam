@@ -19,7 +19,8 @@ from .export import (
     export_to_csv,
     export_to_excel,
     export_summary_table,
-    export_all
+    export_all,
+    export_per_turbine_losses_table
 )
 
 # Report generation
@@ -44,6 +45,7 @@ __all__ = [
     'export_to_excel',
     'export_summary_table',
     'export_all',
+    'export_per_turbine_losses_table',
 
     # Reports
     'generate_text_report',

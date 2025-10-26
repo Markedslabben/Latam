@@ -8,9 +8,11 @@ from typing import Union, Optional, Dict, Any
 from pathlib import Path
 import json
 import pandas as pd
+import numpy as np
 
 from .results import HybridProjectResult, HybridProductionResult
 from ..economics import FinancialMetrics
+from ..core.data_models import WindSimulationResult
 
 
 def export_to_json(
@@ -309,3 +311,128 @@ def export_all(
         exported_files['markdown'] = md_path
 
     return exported_files
+
+
+def export_per_turbine_losses_table(
+    result: WindSimulationResult,
+    filepath: Union[str, Path],
+    format: str = 'csv'
+) -> None:
+    """
+    Export per-turbine loss breakdown to table format.
+
+    Creates a comprehensive table showing ideal production, losses by category,
+    and net production for each turbine. Loss values are shown in both absolute
+    (GWh/yr) and percentage terms.
+
+    Args:
+        result: WindSimulationResult object with per-turbine loss data in metadata
+        filepath: Output file path (.csv, .xlsx, or .md)
+        format: Output format ('csv', 'excel', or 'markdown')
+
+    Example:
+        >>> export_per_turbine_losses_table(
+        ...     result,
+        ...     "output/turbine_losses.csv",
+        ...     format='csv'
+        ... )
+
+    Table columns:
+        - Turbine_ID: Turbine number (1-N)
+        - Ideal_Production_GWh: Production before any losses
+        - Wake_Loss_GWh: Absolute wake losses
+        - Wake_Loss_Percent: Wake losses as % of ideal
+        - Sector_Loss_GWh: Absolute sector management losses
+        - Sector_Loss_Percent: Sector losses as % of ideal
+        - Other_Loss_GWh: Absolute other losses (availability, electrical, etc.)
+        - Other_Loss_Percent: Other losses as % of ideal
+        - Net_Production_GWh: Final production after all losses
+        - Capacity_Factor: Per-turbine capacity factor
+
+    Notes:
+        - All loss values are in absolute GWh/yr (not cumulative percentages)
+        - Percentages are calculated relative to ideal production
+        - Requires per-turbine loss data in result.metadata (added by run_simulation)
+    """
+    filepath = Path(filepath)
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    # Extract per-turbine data from metadata
+    ideal_per_turbine = np.array(result.metadata.get('ideal_per_turbine_gwh', []))
+    wake_loss_per_turbine = np.array(result.metadata.get('wake_loss_per_turbine_gwh', []))
+    sector_loss_per_turbine = np.array(result.metadata.get('sector_loss_per_turbine_gwh', []))
+    other_loss_per_turbine = np.array(result.metadata.get('other_loss_per_turbine_gwh', []))
+    net_production = np.array(result.turbine_production_gwh)
+
+    # Check if data exists
+    if len(ideal_per_turbine) == 0:
+        raise ValueError(
+            "Per-turbine loss data not found in result.metadata. "
+            "Ensure simulation was run with compute_losses=True"
+        )
+
+    n_turbines = len(net_production)
+    turbine_ids = list(range(1, n_turbines + 1))
+
+    # Get rated power per turbine from metadata
+    total_capacity_mw = result.metadata.get('total_capacity_mw', 91.0)
+    rated_power_per_turbine_kw = (total_capacity_mw * 1000) / n_turbines
+
+    # Calculate percentages relative to ideal production
+    wake_loss_pct = (wake_loss_per_turbine / ideal_per_turbine * 100).round(2)
+    sector_loss_pct = (sector_loss_per_turbine / ideal_per_turbine * 100).round(2)
+    other_loss_pct = (other_loss_per_turbine / ideal_per_turbine * 100).round(2)
+
+    # Calculate per-turbine capacity factor
+    # CF = (GWh/yr × 1000 MWh/GWh) / (rated_power_kW × 8760 hr/yr)
+    capacity_factor = (net_production * 1000) / (rated_power_per_turbine_kw * 8760)
+    capacity_factor_pct = (capacity_factor * 100).round(2)
+
+    # Create DataFrame
+    data = {
+        'Turbine_ID': turbine_ids,
+        'Ideal_Production_GWh': ideal_per_turbine.round(3),
+        'Wake_Loss_GWh': wake_loss_per_turbine.round(3),
+        'Wake_Loss_Percent': wake_loss_pct,
+        'Sector_Loss_GWh': sector_loss_per_turbine.round(3),
+        'Sector_Loss_Percent': sector_loss_pct,
+        'Other_Loss_GWh': other_loss_per_turbine.round(3),
+        'Other_Loss_Percent': other_loss_pct,
+        'Net_Production_GWh': net_production.round(3),
+        'Capacity_Factor_Percent': capacity_factor_pct
+    }
+
+    df = pd.DataFrame(data)
+
+    # Add summary row
+    summary_row = {
+        'Turbine_ID': 'TOTAL',
+        'Ideal_Production_GWh': ideal_per_turbine.sum().round(2),
+        'Wake_Loss_GWh': wake_loss_per_turbine.sum().round(2),
+        'Wake_Loss_Percent': result.wake_loss_percent,
+        'Sector_Loss_GWh': sector_loss_per_turbine.sum().round(2),
+        'Sector_Loss_Percent': result.sector_loss_percent,
+        'Other_Loss_GWh': other_loss_per_turbine.sum().round(2),
+        'Other_Loss_Percent': (other_loss_per_turbine.sum() / ideal_per_turbine.sum() * 100).round(2),
+        'Net_Production_GWh': result.aep_gwh,
+        'Capacity_Factor_Percent': (result.capacity_factor * 100).round(2)
+    }
+    df = pd.concat([df, pd.DataFrame([summary_row])], ignore_index=True)
+
+    # Export based on format
+    if format == 'csv':
+        df.to_csv(filepath, index=False)
+    elif format == 'excel':
+        try:
+            import openpyxl
+        except ImportError:
+            raise ImportError(
+                "openpyxl required for Excel export. "
+                "Install with: conda install -c conda-forge openpyxl"
+            )
+        df.to_excel(filepath, index=False, sheet_name='Per-Turbine Losses')
+    elif format == 'markdown':
+        with open(filepath, 'w') as f:
+            f.write(df.to_markdown(index=False))
+    else:
+        raise ValueError(f"Unknown format: {format}. Use 'csv', 'excel', or 'markdown'")

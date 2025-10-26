@@ -211,26 +211,39 @@ class WindSimulationResult:
     Results from wind farm simulation.
 
     Attributes:
-        power_timeseries: DataFrame with DatetimeIndex and power output (kW)
+        aep_gwh: Net Annual Energy Production in GWh (after all losses)
         capacity_factor: Overall capacity factor (0-1)
-        aep_gwh: Annual Energy Production in GWh
-        wake_losses: Wake loss percentage (0-100)
-        turbine_production: Per-turbine production data
+        wake_loss_percent: Wake loss percentage (0-100)
+        turbine_production_gwh: Per-turbine production in GWh (list)
+        wake_model: WakeModel
+        sector_loss_percent: Sector management curtailment loss percentage (0-100, future)
+        gross_aep_gwh: Gross AEP before non-wake losses (optional, for loss tracking)
+        loss_breakdown: Detailed breakdown of all loss categories (optional)
+        total_loss_factor: Combined loss factor (1-l1)*(1-l2)*...*(1-ln) (optional)
         metadata: Simulation metadata (wake model, version, runtime, etc.)
     """
-    power_timeseries: pd.DataFrame
-    capacity_factor: float
     aep_gwh: float
-    wake_losses: float
-    turbine_production: Optional[pd.DataFrame] = None
+    capacity_factor: float
+    wake_loss_percent: float
+    turbine_production_gwh: List[float]
+    wake_model: WakeModel
+    sector_loss_percent: float = 0.0  # Future: sector management losses
+    gross_aep_gwh: Optional[float] = None
+    loss_breakdown: Optional[Dict[str, Dict]] = None  # Changed to Dict[str, Dict]
+    total_loss_factor: Optional[float] = None
     metadata: Dict = field(default_factory=dict)
 
     def __post_init__(self):
         """Validate simulation results."""
         if not (0 <= self.capacity_factor <= 1):
             raise ValueError("Capacity factor must be between 0 and 1")
-        if self.wake_losses < 0 or self.wake_losses > 100:
+        if self.wake_loss_percent < 0 or self.wake_loss_percent > 100:
             raise ValueError("Wake losses must be between 0 and 100")
+        if self.sector_loss_percent < 0 or self.sector_loss_percent > 100:
+            raise ValueError("Sector losses must be between 0 and 100")
+        if self.total_loss_factor is not None:
+            if not (0 <= self.total_loss_factor <= 1):
+                raise ValueError("Total loss factor must be between 0 and 1")
 
 
 @dataclass(frozen=True)
@@ -280,6 +293,59 @@ class EconomicResult:
     irr: Optional[float] = None
     payback_period_years: Optional[float] = None
     metadata: Dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class SectorManagementConfig:
+    """
+    Sector management configuration for wind turbines.
+
+    Defines allowed wind direction sectors per turbine. Turbines are stopped
+    (zero production, no wakes) when wind comes from prohibited directions.
+
+    Attributes:
+        turbine_sectors: Mapping of turbine_id to list of allowed sector ranges
+                        Format: {turbine_id: [(start_deg, end_deg), ...]}
+                        Example: {1: [(60,120), (240,300)]} means turbine 1 runs
+                        only when wind is between 60-120° or 240-300°
+                        Turbines NOT in this dict have no sector restrictions
+        metadata: Optional metadata (reason, date configured, etc.)
+
+    Example:
+        >>> config = SectorManagementConfig(
+        ...     turbine_sectors={
+        ...         1: [(60, 120), (240, 300)],
+        ...         3: [(60, 120), (240, 300)]
+        ...     },
+        ...     metadata={'reason': 'Noise restrictions'}
+        ... )
+    """
+    turbine_sectors: Dict[int, List[Tuple[float, float]]]
+    metadata: Dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate sector management configuration."""
+        for turbine_id, sectors in self.turbine_sectors.items():
+            # Validate turbine ID
+            if not isinstance(turbine_id, int) or turbine_id <= 0:
+                raise ValueError(f"Turbine ID must be positive integer, got {turbine_id}")
+
+            # Validate sectors
+            if not isinstance(sectors, list) or len(sectors) == 0:
+                raise ValueError(f"Turbine {turbine_id} must have at least one sector range")
+
+            for start, end in sectors:
+                # Check types
+                if not (isinstance(start, (int, float)) and isinstance(end, (int, float))):
+                    raise ValueError(f"Sector angles must be numbers, got {start}, {end}")
+
+                # Check range
+                if not (0 <= start <= 360 and 0 <= end <= 360):
+                    raise ValueError(f"Sector angles must be in [0, 360], got ({start}, {end})")
+
+                # Check order
+                if start > end:
+                    raise ValueError(f"Sector start must be <= end, got ({start}, {end})")
 
 
 @dataclass(frozen=True)

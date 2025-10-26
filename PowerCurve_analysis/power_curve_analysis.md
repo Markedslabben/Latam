@@ -36,11 +36,15 @@ The 11.3-year dataset (99,000 hourly records from 2013-12-31 to 2025-04-17) reve
 
 The excellent Weibull fit (Figure 1) with only 0.33% deviation between measured and theoretical mean validates using parametric methods for long-term energy predictions. The shape parameter k=2.23 indicates relatively consistent wind speeds with moderate variability, typical of trade wind influenced sites.
 
+![Figure 1: Wind Speed Distribution and Power Curves](figure1_wind_distribution_power_curves.png)
+
 **Wind shear analysis** using Global Wind Atlas data determined a power law exponent α=0.1846, indicating moderately rough terrain with scattered obstacles. This coefficient enables accurate height adjustment from the 164m measurement level to alternative hub heights (125m and 145m).
 
 ### 1.1.2 Directional Distribution and Sector Management
 
-Wind rose analysis (Figure: validation_wind_rose.png) reveals strong directional preferences:
+Wind rose analysis reveals strong directional preferences:
+
+![Figure 2: Wind Rose - Directional Distribution](validation_wind_rose.png)
 
 - **Dominant sectors:** 60-120° (east-northeast to east-southeast) and 240-300° (west-southwest to west-northwest)
 - **Sector retention:** 70.2% of all hourly records fall within allowed operational sectors
@@ -192,13 +196,18 @@ The **non-linear power response** amplifies this 2.8% wind speed increase to 4-5
 
 **Economic consideration:** If V163-4.5 CAPEX is significantly lower (>15%), it may remain competitive despite lower production.
 
+![Figure 5: Turbine Performance Comparison](figure2_performance_comparison.png)
+
 ---
 
 ## 1.4 Validation and Uncertainty
 
 ### 1.4.1 Weibull Fit Quality
 
-**Q-Q plot analysis** (Figure: validation_weibull_fit.png) shows:
+**Q-Q plot analysis** shows:
+
+![Figure 3: Weibull Distribution Fit Quality](validation_weibull_fit.png)
+
 - Excellent linear correlation between theoretical and sample quantiles
 - R² > 0.995 indicates high-quality fit
 - Minor deviations at extreme tails (>20 m/s wind speeds)
@@ -208,7 +217,10 @@ The **non-linear power response** amplifies this 2.8% wind speed increase to 4-5
 
 ### 1.4.2 Wind Shear Validation
 
-**Shear profile analysis** (Figure: validation_shear_profile.png):
+**Shear profile analysis**:
+
+![Figure 4: Wind Shear Profile Validation](validation_shear_profile.png)
+
 - α=0.1846 derived from Global Wind Atlas multi-height data
 - R²=0.9995 for power law fit (excellent agreement)
 - Classified as **moderately rough terrain** (typical α range: 0.14-0.20)

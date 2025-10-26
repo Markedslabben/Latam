@@ -30,6 +30,15 @@ This directory contains all reference materials, papers, and reports used in the
 |-----------|------|-------------|
 | <!-- Add reports here --> |
 
+## External References
+
+### Standards and Tools
+
+- **IEC 61400-15 Site Suitability Input Form**
+  - GitHub: https://github.com/IEC-61400-15/site_suitability_conditions_input_form
+  - Description: Site suitability conditions input form according to the IEC 61400-15 standard
+  - Purpose: Standardized framework for assessing wind turbine site conditions and environmental parameters
+
 ## Usage Guidelines
 
 1. When adding new documents:
