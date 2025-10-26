@@ -347,7 +347,8 @@ def export_per_turbine_losses_table(
         - Other_Loss_GWh: Absolute other losses (availability, electrical, etc.)
         - Other_Loss_Percent: Other losses as % of ideal
         - Net_Production_GWh: Final production after all losses
-        - Capacity_Factor: Per-turbine capacity factor
+        - Capacity_Factor_Percent: Per-turbine capacity factor (%)
+        - Full_Load_Hours: Equivalent full load hours per turbine
 
     Notes:
         - All loss values are in absolute GWh/yr (not cumulative percentages)
@@ -376,7 +377,7 @@ def export_per_turbine_losses_table(
 
     # Get rated power per turbine from metadata
     total_capacity_mw = result.metadata.get('total_capacity_mw', 91.0)
-    rated_power_per_turbine_kw = (total_capacity_mw * 1000) / n_turbines
+    rated_power_per_turbine_mw = total_capacity_mw / n_turbines
 
     # Calculate percentages relative to ideal production
     wake_loss_pct = (wake_loss_per_turbine / ideal_per_turbine * 100).round(2)
@@ -384,9 +385,13 @@ def export_per_turbine_losses_table(
     other_loss_pct = (other_loss_per_turbine / ideal_per_turbine * 100).round(2)
 
     # Calculate per-turbine capacity factor
-    # CF = (GWh/yr × 1000 MWh/GWh) / (rated_power_kW × 8760 hr/yr)
-    capacity_factor = (net_production * 1000) / (rated_power_per_turbine_kw * 8760)
+    # CF = (GWh/yr × 1000 MWh/GWh) / (rated_power_MW × 8760 hr/yr)
+    capacity_factor = (net_production * 1000) / (rated_power_per_turbine_mw * 8760)
     capacity_factor_pct = (capacity_factor * 100).round(2)
+
+    # Calculate full load hours
+    # FLH = (GWh/yr × 1000 MWh/GWh) / rated_power_MW
+    full_load_hours = ((net_production * 1000) / rated_power_per_turbine_mw).round(0)
 
     # Create DataFrame
     data = {
@@ -399,12 +404,14 @@ def export_per_turbine_losses_table(
         'Other_Loss_GWh': other_loss_per_turbine.round(3),
         'Other_Loss_Percent': other_loss_pct,
         'Net_Production_GWh': net_production.round(3),
-        'Capacity_Factor_Percent': capacity_factor_pct
+        'Capacity_Factor_Percent': capacity_factor_pct,
+        'Full_Load_Hours': full_load_hours
     }
 
     df = pd.DataFrame(data)
 
     # Add summary row
+    farm_full_load_hours = ((result.aep_gwh * 1000) / total_capacity_mw).round(0)
     summary_row = {
         'Turbine_ID': 'TOTAL',
         'Ideal_Production_GWh': ideal_per_turbine.sum().round(2),
@@ -415,7 +422,8 @@ def export_per_turbine_losses_table(
         'Other_Loss_GWh': other_loss_per_turbine.sum().round(2),
         'Other_Loss_Percent': (other_loss_per_turbine.sum() / ideal_per_turbine.sum() * 100).round(2),
         'Net_Production_GWh': result.aep_gwh,
-        'Capacity_Factor_Percent': (result.capacity_factor * 100).round(2)
+        'Capacity_Factor_Percent': (result.capacity_factor * 100).round(2),
+        'Full_Load_Hours': farm_full_load_hours
     }
     df = pd.concat([df, pd.DataFrame([summary_row])], ignore_index=True)
 

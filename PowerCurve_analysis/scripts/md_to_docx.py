@@ -11,8 +11,16 @@ from docx.opc.constants import CONTENT_TYPE as CT
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.style import WD_STYLE_TYPE
-from lxml import etree
-from latex2mathml.converter import convert as latex_to_mathml
+from docx.oxml.ns import qn
+
+# Optional LaTeX support
+try:
+    from lxml import etree
+    from latex2mathml.converter import convert as latex_to_mathml
+    LATEX_SUPPORT = True
+except ImportError:
+    LATEX_SUPPORT = False
+    print("WARNING: LaTeX support not available (latex2mathml not installed)")
 
 # Monkey patch Document() to accept .dotx templates
 import docx.api
@@ -31,7 +39,7 @@ def patched_document(docx_path=None):
         # If it's a template content type error, use blank document
         # Template styles will be applied when we save
         if 'template.main+xml' in str(e):
-            print(f"⚠️  Template detected (.dotx), creating document with default styles")
+            print(f"WARNING: Template detected (.dotx), creating document with default styles")
             print(f"   (Template formatting may not be preserved)")
             return _original_document()  # Create blank document
         raise
@@ -52,6 +60,10 @@ def latex_to_omml(latex_string):
     Returns:
         lxml Element containing OMML representation
     """
+    if not LATEX_SUPPORT:
+        print(f"WARNING: LaTeX conversion skipped (not installed): {latex_string[:50]}...")
+        return None
+
     try:
         # Convert LaTeX to MathML
         mathml_string = latex_to_mathml(latex_string)
@@ -69,7 +81,7 @@ def latex_to_omml(latex_string):
         return omml_tree.getroot()
 
     except Exception as e:
-        print(f"⚠️  LaTeX conversion error: {latex_string[:50]}... → {e}")
+        print(f"WARNING: LaTeX conversion error: {latex_string[:50]}... -> {e}")
         return None
 
 def parse_markdown_to_docx(md_path, template_path, output_path, figures_dir):
@@ -107,22 +119,46 @@ def parse_markdown_to_docx(md_path, template_path, output_path, figures_dir):
             heading_text = line[2:].strip()
             # Remove numbering pattern at start (e.g., "1. ", "1.1 ", "1.1.1 ")
             heading_text = re.sub(r'^\d+(\.\d+)*\.?\s+', '', heading_text)
-            doc.add_heading(heading_text, level=1)
+            heading = doc.add_heading(heading_text, level=1)
+            # Disable numbering for appendix headings
+            if heading_text.startswith('Appendix') or heading_text.startswith('APPENDIX'):
+                pPr = heading._element.get_or_add_pPr()
+                numPr = pPr.find(qn('w:numPr'))
+                if numPr is not None:
+                    pPr.remove(numPr)
 
         elif line.startswith('## '):
             heading_text = line[3:].strip()
             heading_text = re.sub(r'^\d+(\.\d+)*\.?\s+', '', heading_text)
-            doc.add_heading(heading_text, level=2)
+            heading = doc.add_heading(heading_text, level=2)
+            # Disable numbering for appendix headings
+            if heading_text.startswith('Appendix') or heading_text.startswith('APPENDIX'):
+                pPr = heading._element.get_or_add_pPr()
+                numPr = pPr.find(qn('w:numPr'))
+                if numPr is not None:
+                    pPr.remove(numPr)
 
         elif line.startswith('### '):
             heading_text = line[4:].strip()
             heading_text = re.sub(r'^\d+(\.\d+)*\.?\s+', '', heading_text)
-            doc.add_heading(heading_text, level=3)
+            heading = doc.add_heading(heading_text, level=3)
+            # Disable numbering for appendix headings
+            if heading_text.startswith('Appendix') or heading_text.startswith('APPENDIX'):
+                pPr = heading._element.get_or_add_pPr()
+                numPr = pPr.find(qn('w:numPr'))
+                if numPr is not None:
+                    pPr.remove(numPr)
 
         elif line.startswith('#### '):
             heading_text = line[5:].strip()
             heading_text = re.sub(r'^\d+(\.\d+)*\.?\s+', '', heading_text)
-            doc.add_heading(heading_text, level=4)
+            heading = doc.add_heading(heading_text, level=4)
+            # Disable numbering for appendix headings
+            if heading_text.startswith('Appendix') or heading_text.startswith('APPENDIX'):
+                pPr = heading._element.get_or_add_pPr()
+                numPr = pPr.find(qn('w:numPr'))
+                if numPr is not None:
+                    pPr.remove(numPr)
 
         # Handle images: ![caption](path)
         elif line.strip().startswith('!['):
@@ -130,11 +166,30 @@ def parse_markdown_to_docx(md_path, template_path, output_path, figures_dir):
             if match:
                 caption, img_filename = match.groups()
 
-                # Construct full image path
-                img_path = Path(figures_dir) / img_filename
+                # Try multiple locations for the image
+                img_path = None
 
-                # Check if file exists
-                if img_path.exists():
+                # First try: figures directory
+                candidate = Path(figures_dir) / img_filename
+                if candidate.exists():
+                    img_path = candidate
+
+                # Second try: parent directory (for images without figures/ prefix)
+                if img_path is None:
+                    candidate = Path(figures_dir).parent / img_filename
+                    if candidate.exists():
+                        img_path = candidate
+
+                # Third try: assume it's already a full path relative to figures_dir
+                if img_path is None:
+                    # Remove 'figures/' prefix if present
+                    cleaned_name = img_filename.replace('figures/', '')
+                    candidate = Path(figures_dir) / cleaned_name
+                    if candidate.exists():
+                        img_path = candidate
+
+                # Check if file was found
+                if img_path and img_path.exists():
                     # Add image
                     doc.add_picture(str(img_path), width=Inches(6.5))
 
@@ -220,7 +275,7 @@ def parse_markdown_to_docx(md_path, template_path, output_path, figures_dir):
 
     # Save document
     doc.save(output_path)
-    print(f"✅ Document saved to: {output_path}")
+    print(f"[SUCCESS] Document saved to: {output_path}")
 
 def process_inline_formatting(paragraph, text):
     """
@@ -301,13 +356,21 @@ def process_table(doc, table_lines):
 
     table = doc.add_table(rows=num_rows, cols=num_cols)
     try:
-        table.style = 'Light Grid Accent 1'
+        # Try with dash and spaces (Word's standard naming)
+        table.style = 'List Table 3 - Accent 5'
     except KeyError:
-        # Style doesn't exist, use default table style
+        # Try without dash
         try:
-            table.style = 'Table Grid'
+            table.style = 'List Table 3 Accent 5'
         except KeyError:
-            pass  # Use default
+            # Try alternate naming
+            try:
+                table.style = 'Light List - Accent 5'
+            except KeyError:
+                try:
+                    table.style = 'Table Grid'
+                except KeyError:
+                    pass  # Use default
 
     # Populate table
     for i, row_data in enumerate(rows):
@@ -333,20 +396,20 @@ def main():
 
     # Verify files exist
     if not md_file.exists():
-        print(f"❌ Markdown file not found: {md_file}")
+        print(f"[ERROR] Markdown file not found: {md_file}")
         return
 
     if not template_file.exists():
-        print(f"❌ Template file not found: {template_file}")
+        print(f"[ERROR] Template file not found: {template_file}")
         return
 
     if not figures_dir.exists():
-        print(f"⚠️  Figures directory not found: {figures_dir}")
+        print(f"[WARNING] Figures directory not found: {figures_dir}")
 
-    print(f"📄 Converting: {md_file.name}")
-    print(f"📋 Template: {template_file.name}")
-    print(f"🖼️  Figures: {figures_dir}")
-    print(f"💾 Output: {output_file}")
+    print(f"Converting: {md_file.name}")
+    print(f"Template: {template_file.name}")
+    print(f"Figures: {figures_dir}")
+    print(f"Output: {output_file}")
     print()
 
     # Convert
@@ -358,8 +421,8 @@ def main():
     )
 
     print()
-    print("✅ Conversion complete!")
-    print(f"📂 Open: {output_file}")
+    print("[SUCCESS] Conversion complete!")
+    print(f"Open: {output_file}")
 
 if __name__ == "__main__":
     main()

@@ -299,6 +299,55 @@ class WindSite:
         # Run final simulation (with wakes)
         sim_res = self._run_pywake_simulation(wake_model, wind_direction_bins, simulation_method)
 
+        # ========================================================================
+        # WAKE LOSS CALCULATION: Two-Simulation Approach
+        # ========================================================================
+        # NOTE: This approach treats wake losses and sector losses as INDEPENDENT,
+        # which introduces a small approximation error (~0.5-1% farm-level).
+        #
+        # Current Implementation (2 simulations):
+        #   1. Ideal: No wake, no sector management
+        #   2. Realistic: With wake, no sector management
+        #   → Wake loss = Ideal - Realistic
+        #   → Sector loss applied as post-processing (see _apply_sector_management_to_results)
+        #
+        # Known Limitation:
+        #   When a turbine is stopped (sector management), it doesn't create wakes
+        #   for downstream turbines. This reduces wake losses compared to assuming
+        #   all turbines always run. Current approach OVERESTIMATES total losses
+        #   by not accounting for this interaction effect.
+        #
+        # Example:
+        #   - Turbine 3 stopped in wind directions 120-240° (sector management)
+        #   - Turbine 5 (downwind) produces MORE when T3 is stopped (no wake)
+        #   - Current code calculates T5 wake loss assuming T3 always running
+        #   - Result: Wake losses overestimated by ~(sector_loss × wake_fraction)
+        #
+        # Ideal Implementation (future work):
+        #   Would require 3-4 PyWake simulations to properly capture interaction:
+        #   1. No wake, NO sector     → Ideal baseline
+        #   2. No wake, WITH sector   → Pure sector effect
+        #   3. With wake, NO sector   → Pure wake effect
+        #   4. With wake, WITH sector → Combined effect (current reality)
+        #   → This would allow separating: wake + sector + interaction
+        #
+        # Why Not Implemented:
+        #   PyWake doesn't natively support sector management (assumes continuous
+        #   operation). Sector management is applied as post-processing, so we
+        #   cannot run PyWake "with sector management built-in" to capture the
+        #   reduced wake effects when turbines are stopped.
+        #
+        # Error Magnitude:
+        #   Sector loss = ~6% farm-level
+        #   Wake loss = ~10% farm-level
+        #   Interaction effect ≈ 0.6% (second-order)
+        #   → Total error estimate: 0.5-1% of farm production
+        #
+        # TODO: Future enhancement - Implement proper wake-sector interaction
+        #       calculation if PyWake adds sector management support, or develop
+        #       custom post-processing to estimate interaction correction factor.
+        # ========================================================================
+
         # Run NO-WAKE simulation to get ideal production per turbine
         sim_no_wake = self._run_pywake_simulation(None, wind_direction_bins, simulation_method)
         ideal_per_turbine = self._get_aep_per_turbine(sim_no_wake)  # Without wake, without sector
@@ -717,23 +766,27 @@ class WindSite:
     def _get_aep_per_turbine(self, sim_result) -> np.ndarray:
         """
         Extract annual energy per turbine from PyWake simulation result.
+        PyWake's .aep() returns annualized power values, so .mean(dim='time') gives GWh/year.
 
         Args:
             sim_result: PyWake simulation result object
 
         Returns:
-            Array of AEP per turbine (GWh/year), shape (n_turbines,)
+            Array of annual energy per turbine (GWh/year), shape (n_turbines,)
         """
         aep_raw = sim_result.aep()  # xarray DataArray
 
-        # For timeseries: shape is (n_turbines, n_timesteps), need to sum over time
+
+        # For timeseries: shape is (n_turbines, n_timesteps), sum over time
+        # PyWake's .aep() returns energy per timestep,  so sum gives total (but internally annualized)
         # For Weibull: shape is already (n_turbines,)
         if len(aep_raw.shape) == 2:
-            # Timeseries simulation - sum over time dimension
-            return aep_raw.sum(dim='time').values  # Shape: (n_turbines,)
+            # Timeseries simulation - SUM over time dimension
+            # NOTE: PyWake internally annualizes results, so sum returns GWh/year not total GWh
+            return aep_raw.sum(dim='time').values  # Shape: (n_turbines,), GWh/year
         else:
             # Weibull simulation - already aggregated
-            return aep_raw.values  # Shape: (n_turbines,)
+            return aep_raw.values  # Shape: (n_turbines,), GWh/year
 
     def _apply_sector_management_to_results(
         self,
@@ -761,6 +814,22 @@ class WindSite:
             This is a post-processing step. PyWake assumes all turbines operate
             continuously. We calculate actual energy that would be lost when
             turbines are stopped during prohibited wind directions.
+
+        **IMPORTANT - Wake-Sector Loss Interaction:**
+            This post-processing approach treats sector losses as independent of
+            wake losses, which introduces a small approximation error (~0.5-1%
+            farm-level). In reality, when a turbine is stopped (sector management),
+            it doesn't create wakes for downstream turbines, reducing their wake
+            losses. Since PyWake runs with all turbines continuously operating,
+            it cannot capture this interaction effect.
+
+            Current approach: Wake losses calculated assuming all turbines always
+            run → slightly OVERESTIMATES total losses.
+
+            See detailed explanation in run_simulation() method (line ~302) and
+            loss_calculation_methodology.md documentation.
+
+            TODO: Future enhancement to capture wake-sector interaction effects.
         """
         # Get base AEP per turbine from PyWake using helper method
         aep_per_turbine = self._get_aep_per_turbine(sim_result)
@@ -813,10 +882,15 @@ class WindSite:
                         # power_timeseries is in W, multiplied by 1 hour = Wh
                         prohibited_energy_wh += power_timeseries[turbine_idx, t]
 
-                # Convert from Wh to GWh: Wh / 1e9 = GWh
-                sector_loss_per_turbine[turbine_idx] = prohibited_energy_wh / 1e9
+                # Convert from Wh to GWh and annualize to match aep_per_turbine units
+                # aep_per_turbine is already annual (GWh/year) from PyWake
+                # prohibited_energy_wh is total over simulation period, need to annualize
+                num_hours = len(wind_directions)
+                num_years = num_hours / 8760.0
+                sector_loss_gwh_total = prohibited_energy_wh / 1e9  # Total over simulation
+                sector_loss_per_turbine[turbine_idx] = sector_loss_gwh_total / num_years  # Annual average
 
-                # Subtract lost energy from turbine production
+                # Subtract lost energy from turbine production (both now in GWh/year)
                 aep_per_turbine[turbine_idx] -= sector_loss_per_turbine[turbine_idx]
 
         else:

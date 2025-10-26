@@ -49,19 +49,19 @@ Two critical bugs were fixed in the loss calculation system (2025-10-26):
 Create **NEW Table 4** with full PyWake wake modeling + corrected loss calculations for all 5 turbine configurations using the FULL 11.3-year dataset.
 
 ### Turbine Configurations to Analyze
-
+# Note i have changed the below row order of the turbine types compared to existing implementation, because i want to cdifferences betwee Vestas 6.2 and 4.5 production output 
 1. Nordex N164 @ 164m (7.0 MW)
 2. Vestas V162-6.2 @ 145m (6.2 MW)
+2. Vestas V163-4.5 @ 145m (4.5 MW)  
 3. Vestas V162-6.2 @ 125m (6.2 MW)
-4. Vestas V163-4.5 @ 145m (4.5 MW)
-5. Vestas V163-4.5 @ 125m (4.5 MW)
+4. Vestas V163-4.5 @ 125m (4.5 MW)
 
 Each configuration uses:
 - **13-turbine layout** (same layout for all)
 - **Full wind dataset**: 99,000 hourly records (11.3 years)
 - **PyWake simulation**: Bastankhah-Gaussian wake model
 - **Sector management**: Turbines 1,3,5,7,9,12 restricted to 60-120° and 240-300°
-- **Corrected losses**: Wake + Sector (energy-based) + Other (8.8%)
+- **Include correct losses**: Wake,  Sector (energy-based) and  Other (8.8%)
 
 ---
 
@@ -74,18 +74,19 @@ Each configuration uses:
 **Status**: NEEDS TO BE CREATED
 
 **What it should do**:
-1. Load full 11.3-year wind dataset (~99,000 hours)
+1. Load full 11-year wind dataset (must be whole years)
 2. For each turbine configuration:
    - Adjust wind speed to correct hub height (power law)
    - Load turbine power curve
    - Run PyWake simulation with:
      - Bastankhah-Gaussian wake model
      - Time series method (hourly data)
-     - Sector management (energy-based)
+     - Apply other losses (losses.csv)
+     - Sector management (energy-based, with the updated sector management model)
      - Compute losses enabled
-   - Apply other losses (losses.csv)
    - Calculate final production
-3. Export results to CSV tables
+3. Export results to CSV tables. 
+   The CSV tables should have added a column at the right end, showing the fractional difference between Vestas 6.2 and Vestas 4.5 (at the same heights), which can be done by looking at the frational production / normalised production column and just taking the difference of the two i.e Vestas 6.2   - Vestas 4.5   is 0.785 - 0.651 = 0.134
 4. Generate per-turbine loss breakdowns
 
 **Expected Runtime**: 20-30 minutes for all 5 configurations (each requires dual PyWake simulation)
@@ -185,8 +186,8 @@ python PowerCurve_analysis/scripts/md_to_docx.py
 |---|---|---|---|---|---|---|---|
 | Nordex N164 @ 164m | ~280 GWh | ~10.2% | ~5.9% | ~8.8% | ~234 GWh | ~29.4% | 2,571 hr |
 | V162-6.2 @ 145m | ~270 GWh | ~9.8% | ~5.9% | ~8.8% | ~226 GWh | ~31.9% | 2,795 hr |
-| V162-6.2 @ 125m | ~255 GWh | ~9.5% | ~5.9% | ~8.8% | ~214 GWh | ~30.2% | 2,645 hr |
 | V163-4.5 @ 145m | ~232 GWh | ~9.2% | ~5.9% | ~8.8% | ~195 GWh | ~38.0% | 3,329 hr |
+| V162-6.2 @ 125m | ~255 GWh | ~9.5% | ~5.9% | ~8.8% | ~214 GWh | ~30.2% | 2,645 hr |
 | V163-4.5 @ 125m | ~220 GWh | ~8.9% | ~5.9% | ~8.8% | ~185 GWh | ~36.0% | 3,154 hr |
 
 **Key insights**:

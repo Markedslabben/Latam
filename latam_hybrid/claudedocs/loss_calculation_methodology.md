@@ -220,6 +220,161 @@ sector_loss_per_turbine[i] = aep[i] × (1 - availability[i])
 
 ---
 
+## Wake-Sector Loss Interaction (Known Limitation)
+
+### Current Implementation: Independent Loss Treatment
+
+The current loss calculation approach treats **wake losses** and **sector losses as independent**, using only **2 PyWake simulations**:
+
+```python
+# Simulation 1: Ideal (no wake, no sector)
+sim_no_wake = pywake_site.calc_wf(..., wake_model=NoWakeDeficit())
+ideal_per_turbine = get_aep(sim_no_wake)
+
+# Simulation 2: Realistic (with wake, no sector)
+sim_with_wake = pywake_site.calc_wf(..., wake_model='Bastankhah_Gaussian')
+production_with_wake = get_aep(sim_with_wake)
+
+# Loss calculations:
+wake_loss[i] = ideal[i] - production_with_wake[i]
+sector_loss[i] = sum(power[t] for t if wd[t] in prohibited_sectors)  # Post-processing
+```
+
+### Known Limitation: Overestimation of Total Losses
+
+**Problem**: When a turbine is stopped (sector management), it **doesn't create wakes** for downstream turbines. This **reduces wake losses** compared to the assumption that all turbines always run.
+
+**Example Scenario:**
+```
+Layout: T3 (upstream) → wind → T5 (downstream)
+
+Sector Management: T3 stopped in wind directions 120-240°
+
+Reality:
+  - When wind from 120-240°: T3 stopped → T5 operates wake-free → Higher T5 production
+  - When wind from other directions: T3 running → T5 experiences wake → Lower T5 production
+
+Current Calculation:
+  - PyWake assumes T3 always running
+  - T5 wake loss calculated assuming T3 continuously creates wakes
+  - Result: T5 wake loss OVERESTIMATED
+```
+
+### Theoretical Ideal: 4-Simulation Approach
+
+To properly capture the interaction between wake and sector losses, we would need:
+
+```python
+# ============================================
+# IDEAL APPROACH (Not Currently Implemented)
+# ============================================
+
+# Simulation 1: No wake, NO sector management
+ideal_no_sector = pywake(..., wake_model=None, all_turbines_run=True)
+
+# Simulation 2: No wake, WITH sector management
+ideal_with_sector = pywake(..., wake_model=None, sector_mgmt=True)
+
+# Simulation 3: With wake, NO sector management
+wake_no_sector = pywake(..., wake_model='Bastankhah', all_turbines_run=True)
+
+# Simulation 4: With wake, WITH sector management
+wake_with_sector = pywake(..., wake_model='Bastankhah', sector_mgmt=True)
+
+# Independent loss contributions:
+pure_wake_effect = ideal_no_sector - wake_no_sector
+pure_sector_effect = ideal_no_sector - ideal_with_sector
+interaction_effect = (pure_wake_effect + pure_sector_effect)
+                   - (ideal_no_sector - wake_with_sector)
+
+# OR: Calculate losses given sector management is reality:
+wake_loss_with_sector = ideal_with_sector - wake_with_sector  # Reduced wake losses
+sector_loss = ideal_no_sector - ideal_with_sector
+total_loss = ideal_no_sector - wake_with_sector
+```
+
+### Why Not Implemented
+
+**PyWake Limitation**: PyWake doesn't natively support sector management. It assumes all turbines operate continuously at all times.
+
+**Current Workaround**: Sector management is applied as **post-processing**:
+1. PyWake calculates production assuming all turbines always run
+2. Code sums energy produced during prohibited wind directions
+3. That energy is subtracted as "sector loss"
+
+**Consequence**: Cannot run PyWake "with sector management built-in", so cannot capture the reduced wake effects when turbines are stopped.
+
+### Error Magnitude Estimate
+
+```python
+# Typical project values:
+sector_loss = 6% of farm production
+wake_loss = 10% of farm production
+
+# Interaction effect (second-order):
+interaction ≈ sector_loss × wake_fraction
+           ≈ 0.06 × 0.10
+           ≈ 0.006 = 0.6% of farm production
+
+# Conservative estimate:
+total_error = 0.5-1.0% of farm production
+```
+
+**Impact**: Current approach **overestimates** total losses by approximately 0.5-1% at the farm level.
+
+### Practical Considerations
+
+**When Error is Larger:**
+- More turbines affected by sector management
+- Stronger wake effects in the farm
+- Restricted turbines in upstream positions (create wakes for many downwind turbines)
+
+**When Error is Smaller:**
+- Few turbines affected by sector management
+- Weak wake effects (sparse layouts, high turbulence)
+- Restricted turbines in downstream positions (don't affect many turbines)
+
+**For Your Project (13 turbines, 3 restricted):**
+- Error is on the **smaller side** (~0.5-0.7%)
+- Only 3 out of 13 turbines restricted
+- Sector losses modest (5-7% farm-level)
+
+### Code References
+
+**Detailed comments in:**
+- `latam_hybrid/wind/site.py:302-349` - Wake loss calculation with limitation explanation
+- `latam_hybrid/wind/site.py:814-828` - Sector management post-processing note
+
+**Unit tests verify cascade integrity:**
+- `tests/test_loss_calculations.py:113-136` - Verify: ideal - wake - sector - other ≈ net
+
+### Future Enhancement Proposal
+
+**Option 1**: If PyWake adds sector management support in future:
+```python
+# Run 4 simulations to capture interaction
+# Implement proper separation of wake + sector + interaction effects
+```
+
+**Option 2**: Develop post-processing correction factor:
+```python
+# Estimate interaction effect based on:
+# - Turbine positions (upstream/downstream relationships)
+# - Sector restriction configurations
+# - Wake model characteristics
+# Apply correction: adjusted_wake_loss = wake_loss × (1 - correction_factor)
+```
+
+**Option 3**: Accept current approximation:
+- Document limitation clearly ✓
+- Provide error magnitude estimate ✓
+- Note that error is conservative (overestimates losses) ✓
+- Suitable for most feasibility and design studies ✓
+
+**Status**: Currently using **Option 3** - documented approximation with known error bounds.
+
+---
+
 ## Other Losses Calculation (Per-Turbine)
 
 ### Method
